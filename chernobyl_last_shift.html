@@ -1,0 +1,2563 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CHERNOBYL: LAST SHIFT — Kriz Yönetim Terminali</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #080D12;
+            --panel-bg: #111A20;
+            --panel-border: #1F2E38;
+            --primary: #65D68A;
+            --primary-dim: rgba(101, 214, 138, 0.15);
+            --danger: #E34B4B;
+            --danger-dim: rgba(227, 75, 75, 0.15);
+            --warning: #E9B949;
+            --warning-dim: rgba(233, 185, 73, 0.15);
+            --text-main: #D7E0E5;
+            --text-muted: #7B8E9B;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Fira Code', monospace;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .font-display {
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* CRT Tarama Çizgileri ve Parlama Efekti */
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%
+            ), linear-gradient(
+                90deg,
+                rgba(255, 0, 0, 0.03),
+                rgba(0, 255, 0, 0.01),
+                rgba(0, 0, 255, 0.03)
+            );
+            background-size: 100% 3px, 6px 100%;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.65;
+        }
+
+        .crt-disabled .crt-overlay {
+            display: none;
+        }
+
+        .glow-green {
+            text-shadow: 0 0 8px rgba(101, 214, 138, 0.5);
+        }
+
+        .glow-red {
+            text-shadow: 0 0 8px rgba(227, 75, 75, 0.6);
+        }
+
+        .glow-amber {
+            text-shadow: 0 0 8px rgba(233, 185, 73, 0.5);
+        }
+
+        /* Panel ve Endüstriyel Çerçeveler */
+        .soviet-panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        .soviet-panel::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 8px;
+            height: 8px;
+            border-top: 2px solid var(--primary);
+            border-left: 2px solid var(--primary);
+            pointer-events: none;
+        }
+
+        .soviet-panel::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            right: -1px;
+            width: 8px;
+            height: 8px;
+            border-bottom: 2px solid var(--primary);
+            border-right: 2px solid var(--primary);
+            pointer-events: none;
+        }
+
+        /* Özel Kaydırma Çubuğu */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #080D12;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1F2E38;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #65D68A;
+        }
+
+        /* Buton Stilleri */
+        .btn-terminal {
+            background: #142028;
+            border: 1px solid #2A3F4D;
+            color: var(--text-main);
+            transition: all 0.15s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-terminal:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: rgba(101, 214, 138, 0.12);
+            color: var(--primary);
+            box-shadow: 0 0 12px rgba(101, 214, 138, 0.2);
+        }
+
+        .btn-terminal:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn-terminal:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: rgba(101, 214, 138, 0.15);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary);
+            color: #080D12;
+            font-weight: 700;
+        }
+
+        .btn-danger {
+            background: rgba(227, 75, 75, 0.15);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-warning {
+            background: rgba(233, 185, 73, 0.15);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background: var(--warning);
+            color: #080D12;
+            font-weight: 700;
+        }
+
+        /* Animasyonlar */
+        @keyframes pulseAlarm {
+            0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(227, 75, 75, 0.6); }
+            50% { opacity: 0.4; box-shadow: 0 0 2px rgba(227, 75, 75, 0.1); }
+        }
+
+        .alarm-active {
+            animation: pulseAlarm 1.2s infinite;
+        }
+
+        @keyframes radarSweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .radar-sweep {
+            transform-origin: center;
+            animation: radarSweep 8s linear infinite;
+        }
+
+        @keyframes markerPing {
+            0% { r: 6; opacity: 0.9; }
+            100% { r: 22; opacity: 0; }
+        }
+
+        .marker-ping {
+            animation: markerPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        /* Sisli Arka Plan Efekti */
+        .fog-bg {
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(101, 214, 138, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(233, 185, 73, 0.05) 0%, transparent 50%),
+                linear-gradient(180deg, #080D12 0%, #0D161E 100%);
+        }
+
+        .nav-item.active {
+            background: rgba(101, 214, 138, 0.15);
+            border-left: 3px solid var(--primary);
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- CRT Görsel Katmanı -->
+    <div id="crtOverlay" class="crt-overlay"></div>
+
+    <!-- Bildirim (Toast) Alanı -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full px-4 sm:px-0 pointer-events-none"></div>
+
+    <!-- ==================== 1. ANA MENÜ EKRANI ==================== -->
+    <div id="mainMenuScreen" class="min-h-screen flex flex-col justify-between p-4 sm:p-8 fog-bg relative overflow-hidden">
+        <!-- Arka Plan Dekoratif Izgara ve Silüet -->
+        <svg class="absolute inset-0 w-full h-full opacity-15 pointer-events-none" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#65D68A" stroke-width="0.5"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+            <!-- Stilize Santral ve Soğutma Kulesi Silüeti -->
+            <g transform="translate(650, 320)" fill="#16242E" stroke="#65D68A" stroke-width="1">
+                <path d="M40,280 L70,80 L150,80 L180,280 Z" />
+                <path d="M220,280 L245,110 L315,110 L340,280 Z" />
+                <rect x="-180" y="180" width="200" height="100" />
+                <rect x="-120" y="120" width="80" height="60" />
+                <rect x="-90" y="30" width="16" height="90" />
+                <!-- Radar Çemberleri -->
+                <circle cx="-82" cy="30" r="140" fill="none" stroke-dasharray="4 4" opacity="0.4"/>
+                <circle cx="-82" cy="30" r="240" fill="none" stroke-dasharray="8 8" opacity="0.25"/>
+            </g>
+        </svg>
+
+        <!-- Üst Terminal Bilgisi -->
+        <header class="relative z-10 flex flex-wrap justify-between items-center border-b border-[#1F2E38] pb-3 text-xs text-[#7B8E9B]">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#65D68A] inline-block animate-pulse"></span>
+                <span>KOMUTA MERKEZİ // TERMİNAL PRİPYAT-04</span>
+            </div>
+            <div class="flex items-center gap-4 mt-1 sm:mt-0">
+                <span>SİSTEM: SOV-OS v4.86</span>
+                <span id="menuSaveBadge" class="text-[#E9B949]">KAYIT KONTROL EDİLİYOR...</span>
+            </div>
+        </header>
+
+        <!-- Orta Başlık ve Menü -->
+        <main class="relative z-10 my-auto max-w-4xl w-full mx-auto py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div class="lg:col-span-7 space-y-4">
+                <div class="inline-block px-2.5 py-1 bg-[#E34B4B]/20 border border-[#E34B4B] text-[#E34B4B] text-xs font-bold tracking-widest">
+                    ACİL DURUM YÖNETİM PROTOKOLÜ
+                </div>
+                <h1 class="font-display text-4xl sm:text-6xl font-bold tracking-wider text-white glow-green leading-tight">
+                    CHERNOBYL:<br><span class="text-[#65D68A]">LAST SHIFT</span>
+                </h1>
+                <p class="text-sm sm:text-base text-[#E9B949] font-medium tracking-wide border-l-2 border-[#E9B949] pl-3">
+                    The Fate of Pripyat Is in Your Hands.
+                </p>
+                <p class="text-xs sm:text-sm text-[#7B8E9B] leading-relaxed max-w-lg">
+                    Bölgesel kriz komuta merkezinin yetkisi size devredildi. Lojistik hatları yönetin, sivil tahliyeyi organize edin, bilimsel verileri analiz edin ve kritik kararlarla bölgenin kaderini belirleyin.
+                </p>
+            </div>
+
+            <!-- Ana Menü Butonları -->
+            <div class="lg:col-span-5 soviet-panel p-5 rounded-lg space-y-2.5">
+                <div class="text-xs text-[#7B8E9B] border-b border-[#1F2E38] pb-2 mb-3 flex justify-between">
+                    <span>OPERASYON SEÇİMİ</span>
+                    <span>[GİRİŞ BEKLENİYOR]</span>
+                </div>
+
+                <button id="btnMenuNewGame" class="btn-terminal btn-primary w-full py-3 px-4 rounded text-left justify-between font-bold">
+                    <span>&gt; YENİ OYUN</span>
+                    <span class="text-xs opacity-75">[F1]</span>
+                </button>
+
+                <button id="btnMenuContinue" class="btn-terminal w-full py-3 px-4 rounded text-left justify-between" disabled>
+                    <span>&gt; DEVAM ET</span>
+                    <span id="continueSubtext" class="text-xs text-[#7B8E9B]">[KAYIT YOK]</span>
+                </button>
+
+                <button id="btnMenuScenarios" class="btn-terminal w-full py-3 px-4 rounded text-left justify-between">
+                    <span>&gt; SENARYOLAR</span>
+                    <span class="text-xs text-[#65D68A]">[2 MOD]</span>
+                </button>
+
+                <button id="btnMenuHowTo" class="btn-terminal w-full py-3 px-4 rounded text-left justify-between">
+                    <span>&gt; NASIL OYNANIR?</span>
+                    <span class="text-xs text-[#7B8E9B]">[REHBER]</span>
+                </button>
+
+                <button id="btnMenuStats" class="btn-terminal w-full py-3 px-4 rounded text-left justify-between">
+                    <span>&gt; İSTATİSTİKLER</span>
+                    <span class="text-xs text-[#7B8E9B]">[ARŞİV]</span>
+                </button>
+
+                <button id="btnMenuSettings" class="btn-terminal w-full py-3 px-4 rounded text-left justify-between">
+                    <span>&gt; AYARLAR</span>
+                    <span class="text-xs text-[#7B8E9B]">[SİSTEM]</span>
+                </button>
+            </div>
+        </main>
+
+        <!-- Alt Bilgi -->
+        <footer class="relative z-10 border-t border-[#1F2E38] pt-3 flex flex-wrap justify-between items-center text-[11px] text-[#7B8E9B]">
+            <span>PRİPYAT KRİZ SİMÜLASYONU // TARİHSEL &amp; STRATEJİK KURGU</span>
+            <span>TÜM VERİLER YEREL BELLEKTE SAKLANIR</span>
+        </footer>
+    </div>
+
+    <!-- ==================== 2. AKTİF OYUN ARAYÜZÜ ==================== -->
+    <div id="gameScreen" class="hidden min-h-screen flex flex-col bg-[#080D12]">
+        
+        <!-- ÜST KONTROL BARI (Tarih, Saat, Hız, Alarm, Menü) -->
+        <header class="bg-[#0D151B] border-b border-[#1F2E38] px-3 py-2 sticky top-0 z-30">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                
+                <!-- Sol: Mobil Menü Butonu & Senaryo Başlığı -->
+                <div class="flex items-center gap-2">
+                    <button id="btnMobileMenu" class="lg:hidden btn-terminal p-2 rounded" aria-label="Menüyü Aç">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span id="topAlarmLight" class="w-2.5 h-2.5 rounded-full bg-[#65D68A]"></span>
+                            <span class="font-display font-bold text-sm sm:text-base text-white tracking-wider">CHERNOBYL: LAST SHIFT</span>
+                        </div>
+                        <div id="topScenarioTitle" class="text-[11px] text-[#65D68A]">SENARYO A: 1986 — KRİZ YÖNETİMİ</div>
+                    </div>
+                </div>
+
+                <!-- Orta: Tarih, Saat ve Zaman Kontrolleri -->
+                <div class="flex items-center gap-2 bg-[#080D12] border border-[#1F2E38] px-2.5 py-1.5 rounded order-3 lg:order-2 w-full lg:w-auto justify-between lg:justify-center">
+                    <div class="flex items-center gap-2 text-xs sm:text-sm font-display">
+                        <span class="text-[#7B8E9B]">TARİH:</span>
+                        <span id="hudDateTime" class="text-[#E9B949] font-bold">27.04.1986 06:00</span>
+                        <span id="hudDayCounter" class="text-[11px] bg-[#1F2E38] px-1.5 py-0.5 rounded text-[#D7E0E5]">GÜN 1</span>
+                    </div>
+
+                    <div class="flex items-center gap-1 border-l border-[#1F2E38] pl-2">
+                        <button id="btnSpeedPause" class="btn-terminal px-2 py-1 rounded text-xs" title="Duraklat">❚❚</button>
+                        <button id="btnSpeed1x" class="btn-terminal btn-primary px-2 py-1 rounded text-xs" title="Normal Hız">1x</button>
+                        <button id="btnSpeed2x" class="btn-terminal px-2 py-1 rounded text-xs" title="2x Hız">2x</button>
+                        <button id="btnSpeed3x" class="btn-terminal px-2 py-1 rounded text-xs" title="3x Hız">3x</button>
+                        <button id="btnNextDay" class="btn-terminal btn-warning px-2 py-1 rounded text-xs ml-1" title="Sonraki Güne Geç">+1 GÜN</button>
+                    </div>
+                </div>
+
+                <!-- Sağ: Hızlı Eylemler (Kaydet, Ayarlar, Ana Menü) -->
+                <div class="flex items-center gap-1.5 order-2 lg:order-3">
+                    <button id="btnHudSave" class="btn-terminal px-2.5 py-1.5 rounded text-xs" title="Oyunu Kaydet">
+                        <span>KAYDET</span>
+                    </button>
+                    <button id="btnHudSettings" class="btn-terminal px-2.5 py-1.5 rounded text-xs" title="Ayarlar">
+                        <span>AYAR</span>
+                    </button>
+                    <button id="btnHudMainMenu" class="btn-terminal btn-danger px-2.5 py-1.5 rounded text-xs" title="Ana Menüye Dön">
+                        <span>MENÜ</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hızlı Kaynak Şeridi -->
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 mt-2 pt-2 border-t border-[#1F2E38]/70 text-xs">
+                <div class="bg-[#080D12] px-2 py-1 rounded border border-[#1F2E38] flex justify-between items-center">
+                    <span class="text-[#7B8E9B]">BÜTÇE</span>
+                    <span id="barBudget" class="font-bold text-[#65D68A]">5000</span>
+                </div>
+                <div class="bg-[#080D12] px-2 py-1 rounded border border-[#1F2E38] flex justify-between items-center">
+                    <span class="text-[#7B8E9B]">GIDA</span>
+                    <span id="barFood" class="font-bold text-[#D7E0E5]">1200</span>
+                </div>
+                <div class="bg-[#080D12] px-2 py-1 rounded border border-[#1F2E38] flex justify-between items-center">
+                    <span class="text-[#7B8E9B]">SU</span>
+                    <span id="barWater" class="font-bold text-[#D7E0E5]">1500</span>
+                </div>
+                <div class="bg-[#080D12] px-2 py-1 rounded border border-[#1F2E38] flex justify-between items-center">
+                    <span class="text-[#7B8E9B]">TIBBİ</span>
+                    <span id="barMedical" class="font-bold text-[#E9B949]">600</span>
+                </div>
+                <div class="bg-[#080D12] px-2 py-1 rounded border border-[#1F2E38] flex justify-between items-center">
+                    <span class="text-[#7B8E9B]">PERSONEL</span>
+                    <span id="barStaff" class="font-bold text-[#D7E0E5]">180</span>
+                </div>
+                <div class="bg-[#080D12] px-2 py-1 rounded border border-[#1F2E38] flex justify-between items-center">
+                    <span class="text-[#7B8E9B]">EKİPMAN</span>
+                    <span id="barEquipment" class="font-bold text-[#D7E0E5]">250</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ANA ÇALIŞMA ALANI (Sol Menü + Dinamik İçerik Paneli) -->
+        <div class="flex-1 flex relative overflow-hidden">
+            
+            <!-- Mobil Menü Karartma Arka Planı -->
+            <div id="mobileSidebarBackdrop" class="hidden fixed inset-0 bg-black/70 z-30 lg:hidden"></div>
+
+            <!-- SOL NAVİGASYON MENÜSÜ -->
+            <aside id="sidebarMenu" class="fixed lg:static inset-y-0 left-0 w-64 bg-[#0B1217] border-r border-[#1F2E38] z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col justify-between">
+                <div class="p-3 space-y-1 overflow-y-auto">
+                    <div class="flex items-center justify-between lg:hidden pb-2 mb-2 border-b border-[#1F2E38]">
+                        <span class="text-xs font-bold text-[#65D68A]">KOMUTA SEKMELERİ</span>
+                        <button id="btnCloseMobileMenu" class="btn-terminal px-2 py-1 rounded text-xs">X</button>
+                    </div>
+
+                    <button data-tab="overview" class="nav-item active w-full text-left px-3 py-2.5 rounded text-xs sm:text-sm flex items-center justify-between transition">
+                        <span>01. GENEL BAKIŞ</span>
+                        <span class="text-[10px] opacity-60">[ANA]</span>
+                    </button>
+                    <button data-tab="map" class="nav-item w-full text-left px-3 py-2.5 rounded text-xs sm:text-sm flex items-center justify-between transition">
+                        <span>02. PRİPYAT HARİTASI</span>
+                        <span class="text-[10px] text-[#65D68A]">[RADAR]</span>
+                    </button>
+                    <button data-tab="resources" class="nav-item w-full text-left px-3 py-2.5 rounded text-xs sm:text-sm flex items-center justify-between transition">
+                        <span>03. KAYNAKLAR</span>
+                        <span class="text-[10px] opacity-60">[LOJ]</span>
+                    </button>
+                    <button data-tab="population" class="nav-item w-full text-left px-3 py-2.5 rounded text-xs sm:text-sm flex items-center justify-between transition">
+                        <span>04. HALK &amp; TAHLİYE</span>
+                        <span class="text-[10px] opacity-60">[SİVİL]</span>
+                    </button>
+                    <button data-tab="research" class="nav-item w-full text-left px-3 py-2.5 rounded text-xs sm:text-sm flex items-center justify-between transition">
+                        <span>05. ARAŞTIRMA</span>
+                        <span class="text-[10px] opacity-60">[LAB]</span>
+                    </button>
+                    <button data-tab="missions" class="nav-item w-full text-left px-3 py-2.5 rounded text-xs sm:text-sm flex items-center justify-between transition">
+                        <span>06. GÖREVLER</span>
+                        <span id="badgeMissions" class="text-[10px] bg-[#65D68A]/20 text-[#65D68A] px-1.5 py-0.5 rounded">0</span>
+                    </button>
+                    <button data-tab="events" class="nav-item w-full text-left px-3 py-2.5 rounded text-xs sm:text-sm flex items-center justify-between transition">
+                        <span>07. OLAYLAR</span>
+                        <span id="badgeEvents" class="text-[10px] bg-[#E34B4B]/20 text-[#E34B4B] px-1.5 py-0.5 rounded">0</span>
+                    </button>
+                    <button data-tab="reports" class="nav-item w-full text-left px-3 py-2.5 rounded text-xs sm:text-sm flex items-center justify-between transition">
+                        <span>08. RAPORLAR</span>
+                        <span class="text-[10px] opacity-60">[KAYIT]</span>
+                    </button>
+                </div>
+
+                <!-- Alt Durum Özeti -->
+                <div class="p-3 border-t border-[#1F2E38] bg-[#080D12] text-[11px] space-y-2">
+                    <div>
+                        <div class="flex justify-between text-[#7B8E9B] mb-1">
+                            <span>HALK GÜVENİ</span>
+                            <span id="sideTrustVal" class="text-[#65D68A]">%75</span>
+                        </div>
+                        <div class="w-full bg-[#1F2E38] h-1.5 rounded overflow-hidden">
+                            <div id="sideTrustBar" class="bg-[#65D68A] h-full transition-all" style="width: 75%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-[#7B8E9B] mb-1">
+                            <span>BÖLGE STABİLİTESİ</span>
+                            <span id="sideStabilityVal" class="text-[#E9B949]">%60</span>
+                        </div>
+                        <div class="w-full bg-[#1F2E38] h-1.5 rounded overflow-hidden">
+                            <div id="sideStabilityBar" class="bg-[#E9B949] h-full transition-all" style="width: 60%"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- SAĞ İÇERİK EKRANI (Sekmeler Buraya Render Edilir) -->
+            <main id="tabContentArea" class="flex-1 p-3 sm:p-5 overflow-y-auto max-w-full">
+                <!-- Dinamik içerik JS ile yüklenir -->
+            </main>
+        </div>
+    </div>
+
+    <!-- ==================== 3. MODALLAR (PENCERELER) ==================== -->
+
+    <!-- Genel Amaçlı Modal Çerçevesi -->
+    <div id="modalBackdrop" class="hidden fixed inset-0 bg-black/80 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
+        <div id="modalBox" class="soviet-panel bg-[#111A20] border border-[#2A3F4D] rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+            <!-- Modal Üst Bar -->
+            <div class="flex items-center justify-between px-4 py-3 border-b border-[#1F2E38] bg-[#0D151B]">
+                <div class="flex items-center gap-2">
+                    <span id="modalBackBtn" class="hidden btn-terminal px-2 py-0.5 rounded text-xs cursor-pointer">&lt; GERİ</span>
+                    <h2 id="modalTitle" class="font-display text-base sm:text-lg font-bold text-[#65D68A] tracking-wide">PENCERE BAŞLIĞI</h2>
+                </div>
+                <button id="modalCloseBtn" class="btn-terminal btn-danger px-2.5 py-1 rounded text-xs font-bold" aria-label="Kapat">X</button>
+            </div>
+            <!-- Modal İçerik -->
+            <div id="modalBody" class="p-4 overflow-y-auto text-xs sm:text-sm space-y-4">
+                <!-- Dinamik modal içeriği -->
+            </div>
+            <!-- Modal Alt Butonlar -->
+            <div id="modalFooter" class="px-4 py-3 border-t border-[#1F2E38] bg-[#0D151B] flex justify-end gap-2">
+                <!-- Dinamik aksiyon butonları -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 4. OYUN MOTORU VE SİSTEM KODLARI ==================== -->
+    <script>
+        /**
+         * CHERNOBYL: LAST SHIFT
+         * Modüler Tarayıcı Simülasyon Motoru
+         * Tüm sistemler (Ses, Kayıt, Zaman, Kaynak, Olay, Harita, Görev, Arayüz) tek bir tutarlı yapıda birleştirilmiştir.
+         */
+
+        // ==================== 1. SENTETİK SES SİSTEMİ (WEB AUDIO API) ====================
+        const SoundSystem = {
+            ctx: null,
+            enabled: false,
+            ambientInterval: null,
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+
+            setEnabled(val) {
+                this.enabled = Boolean(val);
+                if (this.enabled) {
+                    this.init();
+                    this.startAmbient();
+                } else {
+                    this.stopAmbient();
+                }
+            },
+
+            playTone(freq, type, duration, vol = 0.05) {
+                if (!this.enabled) return;
+                try {
+                    this.init();
+                    if (!this.ctx) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {
+                    // Ses hatası oyunu durdurmaz
+                }
+            },
+
+            click() {
+                this.playTone(880, 'square', 0.04, 0.03);
+            },
+
+            notify() {
+                this.playTone(620, 'sine', 0.12, 0.05);
+                setTimeout(() => this.playTone(940, 'sine', 0.18, 0.05), 110);
+            },
+
+            alarm() {
+                this.playTone(440, 'sawtooth', 0.25, 0.06);
+                setTimeout(() => this.playTone(330, 'sawtooth', 0.3, 0.06), 240);
+            },
+
+            startAmbient() {
+                this.stopAmbient();
+                this.ambientInterval = setInterval(() => {
+                    if (this.enabled && GameEngine.isRunning) {
+                        // Hafif kontrol odası radar/telemetri tıkırtısı
+                        this.playTone(140, 'sine', 0.08, 0.012);
+                    }
+                }, 4000);
+            },
+
+            stopAmbient() {
+                if (this.ambientInterval) {
+                    clearInterval(this.ambientInterval);
+                    this.ambientInterval = null;
+                }
+            }
+        };
+
+        // ==================== 2. OYUN VERİ TABANI (SENARYOLAR, HARİTA, OLAYLAR, GÖREVLER) ====================
+        const SCENARIOS = {
+            crisis1986: {
+                id: 'crisis1986',
+                code: 'SENARYO A',
+                title: '1986 — KRİZ YÖNETİMİ',
+                subtitle: 'Acil Tahliye ve Bölgesel Kontrol Operasyonu',
+                description: 'Nisan 1986. Pripyat ve çevresindeki sivil nüfusun güvenli tahliyesi, lojistik tedarik zincirinin kurulması ve bilimsel ekiplerin sahaya yönlendirilmesi gerekiyor. Zaman daralıyor ve kaynaklar kısıtlı.',
+                startDate: { year: 1986, month: 4, day: 27, hour: 6 },
+                targetDays: 14,
+                initialResources: {
+                    budget: 6000,
+                    food: 1400,
+                    water: 1600,
+                    medical: 750,
+                    staff: 220,
+                    equipment: 300
+                },
+                initialPopulation: {
+                    totalPripyat: 49000,
+                    evacuated: 0,
+                    safeZonePop: 2500,
+                    shelterCapacity: 15000,
+                    trust: 72,
+                    health: 80,
+                    stability: 58
+                },
+                initialResearch: {
+                    envIndex: 68, // Çevresel risk endeksi (düşürülmesi hedeflenir)
+                    labCapacity: 100,
+                    activeTeams: 2,
+                    completedStudies: 0,
+                    dataPoints: 15
+                }
+            },
+            modernRebuild: {
+                id: 'modernRebuild',
+                code: 'SENARYO B',
+                title: 'MODERN DÖNEM — YENİDEN İNŞA',
+                subtitle: 'Ekolojik Gözlem, Güvenli Koridorlar ve Altyapı Reformu',
+                description: 'Günümüz. Yasak bölgenin bilimsel araştırma merkezine dönüştürülmesi, çevresel izleme istasyonlarının kurulması, güvenli koridorların planlanması ve sürdürülebilir bütçe yönetimi sizin sorumluluğunuzda.',
+                startDate: { year: 2026, month: 5, day: 10, hour: 8 },
+                targetDays: 20,
+                initialResources: {
+                    budget: 9500,
+                    food: 2000,
+                    water: 2200,
+                    medical: 900,
+                    staff: 160,
+                    equipment: 450
+                },
+                initialPopulation: {
+                    totalPripyat: 4500, // Bölgede çalışan ve yerleşik uzman/sivil nüfus
+                    evacuated: 0,
+                    safeZonePop: 8500,
+                    shelterCapacity: 12000,
+                    trust: 82,
+                    health: 92,
+                    stability: 78
+                },
+                initialResearch: {
+                    envIndex: 35,
+                    labCapacity: 180,
+                    activeTeams: 4,
+                    completedStudies: 1,
+                    dataPoints: 40
+                }
+            }
+        };
+
+        const MAP_LOCATIONS = [
+            {
+                id: 'npp',
+                name: 'Güç Santrali Sektörü',
+                type: 'KRİTİK TESİS',
+                x: 68,
+                y: 34,
+                color: '#E34B4B',
+                desc: 'Yüksek güvenlikli teknik izolasyon bölgesi. Sürekli sensör telemetrisi ve saha ekipmanı gerektirir.',
+                actionLabel: 'Teknik Ekip & Ekipman Gönder',
+                cost: { budget: 350, equipment: 40, staff: 15 },
+                effectText: 'Çevresel Risk -6, Bölge Stabilitesi +5',
+                applyEffect(state) {
+                    state.research.envIndex = Math.max(5, state.research.envIndex - 6);
+                    state.population.stability = Math.min(100, state.population.stability + 5);
+                }
+            },
+            {
+                id: 'pripyat_center',
+                name: 'Pripyat Merkez Meydanı',
+                type: 'YERLEŞİM BÖLGESİ',
+                x: 44,
+                y: 28,
+                color: '#E9B949',
+                desc: 'Ana sivil toplanma ve tahliye koordinasyon noktası. Otobüs konvoyları buradan hareket eder.',
+                actionLabel: 'Tahliye Konvoyu Düzenle (2.500 Kişi)',
+                cost: { budget: 300, food: 120, water: 120, staff: 10 },
+                effectText: '+2.500 Sivil Tahliye, Halk Güveni +3',
+                applyEffect(state) {
+                    const remaining = Math.max(0, state.population.totalPripyat - state.population.evacuated);
+                    const moved = Math.min(2500, remaining);
+                    if (moved <= 0) return false;
+                    state.population.evacuated += moved;
+                    state.population.safeZonePop += moved;
+                    state.population.trust = Math.min(100, state.population.trust + 3);
+                    state.stats.totalEvacuated += moved;
+                    return true;
+                }
+            },
+            {
+                id: 'evac_hub_south',
+                name: 'Güney Tahliye ve Barınma Merkezi',
+                type: 'GÜVENLİ BÖLGE',
+                x: 28,
+                y: 72,
+                color: '#65D68A',
+                desc: 'Tahliye edilen vatandaşların tıbbi kontrolden geçirildiği ve geçici konaklamaya alındığı güvenli bölge.',
+                actionLabel: 'Barınma Kapasitesini Genişlet (+3.000)',
+                cost: { budget: 450, equipment: 30, food: 150 },
+                effectText: 'Barınma Kapasitesi +3.000, Sağlık +4',
+                applyEffect(state) {
+                    state.population.shelterCapacity += 3000;
+                    state.population.health = Math.min(100, state.population.health + 4);
+                }
+            },
+            {
+                id: 'research_lab',
+                name: 'Kuzey Bilimsel Gözlem İstasyonu',
+                type: 'ARAŞTIRMA ALANI',
+                x: 24,
+                y: 38,
+                color: '#65D68A',
+                desc: 'Toprak, su ve hava numunelerinin analiz edildiği mobil ve sabit laboratuvar kompleksi.',
+                actionLabel: 'Saha Analizi Başlat (+25 Veri Puanı)',
+                cost: { budget: 250, staff: 10, equipment: 20 },
+                effectText: 'Araştırma Verisi +25, Çevresel Risk -3',
+                applyEffect(state) {
+                    state.research.dataPoints += 25;
+                    state.research.envIndex = Math.max(5, state.research.envIndex - 3);
+                }
+            },
+            {
+                id: 'logistics_depot',
+                name: 'Doğu Demiryolu Lojistik Üssü',
+                type: 'TAHLİYE & TEDARİK MERKEZİ',
+                x: 78,
+                y: 66,
+                color: '#E9B949',
+                desc: 'Dış bölgelerden gelen gıda, su ve tıbbi malzemelerin dağıtım merkezi.',
+                actionLabel: 'Acil Tedarik Sevkiyatı Çağır',
+                cost: { budget: 500 },
+                effectText: 'Gıda +400, Su +450, Tıbbi Malzeme +180',
+                applyEffect(state) {
+                    state.resources.food += 400;
+                    state.resources.water += 450;
+                    state.resources.medical += 180;
+                }
+            },
+            {
+                id: 'polesskoye_town',
+                name: 'Batı Yerleşim ve Destek Kasabası',
+                type: 'YERLEŞİM BÖLGESİ',
+                x: 15,
+                y: 55,
+                color: '#65D68A',
+                desc: 'Bölgesel personel dinlenme alanı ve sivil destek noktası.',
+                actionLabel: 'Sağlık ve Moral Desteği Sağla',
+                cost: { budget: 200, medical: 80, food: 100 },
+                effectText: 'Halk Güveni +5, Sağlık +5',
+                applyEffect(state) {
+                    state.population.trust = Math.min(100, state.population.trust + 5);
+                    state.population.health = Math.min(100, state.population.health + 5);
+                }
+            }
+        ];
+
+        const EVENT_TEMPLATES = [
+            {
+                id: 'evac_demand',
+                title: "Pripyat'ta Yeni Tahliye Planı Gündemde",
+                importance: 'YÜKSEK',
+                desc: 'Bölge komiserliği ve sivil temsilciler, kuzey mahallelerindeki 3.000 sivilin acil olarak tahliye edilmesini talep ediyor. Konvoy kapasitesi sınırda.',
+                options: [
+                    {
+                        label: 'Tahliyeyi Hemen Başlat (-350 Bütçe, -150 Gıda, -150 Su)',
+                        desc: '3.000 sivil güvenli bölgeye taşınır, güven artar.',
+                        apply(s) {
+                            if (s.resources.budget < 350) return 'Yetersiz bütçe! (350 gerekli)';
+                            s.resources.budget -= 350;
+                            s.resources.food = Math.max(0, s.resources.food - 150);
+                            s.resources.water = Math.max(0, s.resources.water - 150);
+                            const moved = Math.min(3000, Math.max(0, s.population.totalPripyat - s.population.evacuated));
+                            s.population.evacuated += moved;
+                            s.population.safeZonePop += moved;
+                            s.stats.totalEvacuated += moved;
+                            s.population.trust = Math.min(100, s.population.trust + 6);
+                            return `${moved} sivil başarıyla tahliye edildi.`;
+                        }
+                    },
+                    {
+                        label: 'Merkezden Ek Kaynak Talep Et (+600 Bütçe, -4 Güven)',
+                        desc: 'Tahliye 1 gün gecikir ancak lojistik fon sağlanır.',
+                        apply(s) {
+                            s.resources.budget += 600;
+                            s.population.trust = Math.max(0, s.population.trust - 4);
+                            return 'Merkezden 600 birim ek bütçe onaylandı, gecikme halkta endişe yarattı.';
+                        }
+                    },
+                    {
+                        label: 'Bilimsel Değerlendirme Bekle (+15 Araştırma, -2 Güven)',
+                        desc: 'Rota güvenliği ölçülür, bilimsel veri toplanır.',
+                        apply(s) {
+                            s.research.dataPoints += 15;
+                            s.population.trust = Math.max(0, s.population.trust - 2);
+                            return 'Bilimsel ekipler güzergah ölçümlerini tamamladı (+15 Veri).';
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'medical_shortage',
+                title: 'Saha Hastanesinde Tıbbi Malzeme İhtiyacı',
+                importance: 'KRİTİK',
+                desc: 'Güney tahliye merkezindeki sağlık birimleri, artan kontrol muayeneleri nedeniyle tıbbi kit ve koruyucu malzeme stoklarının azaldığını bildirdi.',
+                options: [
+                    {
+                        label: 'Acil Tıbbi Sevkiyat Onayla (-400 Bütçe, +250 Tıbbi)',
+                        desc: 'Stoklar hızla yenilenir ve halk sağlığı korunur.',
+                        apply(s) {
+                            if (s.resources.budget < 400) return 'Yetersiz bütçe! (400 gerekli)';
+                            s.resources.budget -= 400;
+                            s.resources.medical += 250;
+                            s.population.health = Math.min(100, s.population.health + 5);
+                            return '250 birim tıbbi malzeme sahaya ulaştırıldı.';
+                        }
+                    },
+                    {
+                        label: 'Mevcut Stokları Yeniden Dağıt (-100 Tıbbi, +3 Güven)',
+                        desc: 'Mevcut kaynaklar dikkatle paylaştırılır.',
+                        apply(s) {
+                            s.resources.medical = Math.max(0, s.resources.medical - 100);
+                            s.population.trust = Math.min(100, s.population.trust + 3);
+                            return 'Mevcut tıbbi stoklar öncelikli birimlere aktarıldı.';
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'staff_fatigue',
+                title: 'Kontrol Merkezi Personel Eksikliği ve Yorgunluk',
+                importance: 'ORTA',
+                desc: 'Vardiya saatlerinin uzaması nedeniyle teknik ve lojistik personel arasında yorgunluk belirtileri artıyor. Yeni uzman takviyesi öneriliyor.',
+                options: [
+                    {
+                        label: 'Yeni Uzman Personel Al (-450 Bütçe, +35 Personel)',
+                        desc: 'Vardiya yükü hafifler ve operasyon hızı artar.',
+                        apply(s) {
+                            if (s.resources.budget < 450) return 'Yetersiz bütçe! (450 gerekli)';
+                            s.resources.budget -= 450;
+                            s.resources.staff += 35;
+                            s.population.stability = Math.min(100, s.population.stability + 4);
+                            return '35 yeni uzman personel göreve başladı.';
+                        }
+                    },
+                    {
+                        label: 'Ek Gıda ve Dinlenme Primi Ver (-150 Gıda, -150 Su)',
+                        desc: 'Mevcut ekibin morali ve stabilitesi korunur.',
+                        apply(s) {
+                            s.resources.food = Math.max(0, s.resources.food - 150);
+                            s.resources.water = Math.max(0, s.resources.water - 150);
+                            s.population.stability = Math.min(100, s.population.stability + 3);
+                            return 'Personele özel kumanya ve dinlenme vardiyası sağlandı.';
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'transport_bottleneck',
+                title: 'Kuzey Kavşağında Ulaşım Sorunu',
+                importance: 'YÜKSEK',
+                desc: 'Yoğun araç trafiği ve yol bakım ihtiyacı nedeniyle tahliye ve tedarik konvoylarında darboğaz oluştu.',
+                options: [
+                    {
+                        label: 'İstihkam Ekipmanı Sevk Et (-50 Ekipman, -250 Bütçe)',
+                        desc: 'Yol açılır ve konvoy akışı normale döner.',
+                        apply(s) {
+                            if (s.resources.equipment < 50 || s.resources.budget < 250) return 'Yetersiz ekipman veya bütçe!';
+                            s.resources.equipment -= 50;
+                            s.resources.budget -= 250;
+                            s.population.stability = Math.min(100, s.population.stability + 5);
+                            return 'Ulaşım koridoru tamamen açıldı.';
+                        }
+                    },
+                    {
+                        label: 'Alternatif Tali Yolları Kullan (-120 Gıda, -3 Güven)',
+                        desc: 'Ulaşım yavaşlar ancak ekipman harcanmaz.',
+                        apply(s) {
+                            s.resources.food = Math.max(0, s.resources.food - 120);
+                            s.population.trust = Math.max(0, s.population.trust - 3);
+                            return 'Konvoylar tali yollara yönlendirildi.';
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'science_breakthrough',
+                title: 'Bilimsel Araştırma Raporu Tamamlandı',
+                importance: 'BİLGİ',
+                desc: 'Kuzey gözlem istasyonu bölgedeki hava ve toprak akımlarına dair kapsamlı bir modelleme hazırladı.',
+                options: [
+                    {
+                        label: 'Verileri Saha Operasyonuna Uygula (-200 Bütçe, -8 Risk)',
+                        desc: 'Çevresel risk endeksi önemli ölçüde düşürülür.',
+                        apply(s) {
+                            if (s.resources.budget < 200) return 'Yetersiz bütçe!';
+                            s.resources.budget -= 200;
+                            s.research.envIndex = Math.max(5, s.research.envIndex - 8);
+                            s.research.completedStudies += 1;
+                            return 'Bilimsel önlemler sahaya uygulandı (Risk -8).';
+                        }
+                    },
+                    {
+                        label: 'Raporu Kamuoyuyla Paylaş (+6 Güven, +15 Veri)',
+                        desc: 'Şeffaflık halkın güvenini artırır.',
+                        apply(s) {
+                            s.population.trust = Math.min(100, s.population.trust + 6);
+                            s.research.dataPoints += 15;
+                            s.research.completedStudies += 1;
+                            return 'Şeffaf bilgilendirme halkın güvenini yükseltti.';
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'international_aid',
+                title: 'Uluslararası Teknik ve İnsani Yardım Teklifi',
+                importance: 'FIRSAT',
+                desc: 'Dış gözlem heyetleri bölgeye gelişmiş ölçüm cihazları ve insani yardım paketi göndermeyi teklif ediyor.',
+                options: [
+                    {
+                        label: 'Yardım Paketini Kabul Et (+300 Gıda, +300 Su, +80 Ekipman)',
+                        desc: 'Lojistik stoklar güçlenir, ortak gözlem başlatılır.',
+                        apply(s) {
+                            s.resources.food += 300;
+                            s.resources.water += 300;
+                            s.resources.equipment += 80;
+                            s.research.dataPoints += 10;
+                            return 'Uluslararası insani ve teknik yardım malzemeleri teslim alındı.';
+                        }
+                    },
+                    {
+                        label: 'Sadece Finansal Fon Kabul Et (+900 Bütçe)',
+                        desc: 'Bütçe doğrudan kriz merkezine aktarılır.',
+                        apply(s) {
+                            s.resources.budget += 900;
+                            return '900 birim dış finansman kriz bütçesine eklendi.';
+                        }
+                    }
+                ]
+            },
+            {
+                id: 'public_complaints',
+                title: 'Halktan Gelen Bilgi ve Barınma Şikâyetleri',
+                importance: 'ORTA',
+                desc: 'Geçici barınma merkezlerindeki vatandaşlar aile birleşimi ve iletişim eksikliği konusunda komuta merkezine dilekçe iletti.',
+                options: [
+                    {
+                        label: 'İletişim ve Danışma Masası Kur (-200 Bütçe, -10 Personel)',
+                        desc: 'Halkın güveni ve sağlığı hızla iyileşir.',
+                        apply(s) {
+                            if (s.resources.budget < 200 || s.resources.staff < 10) return 'Yetersiz bütçe veya personel!';
+                            s.resources.budget -= 200;
+                            s.resources.staff -= 10;
+                            s.population.trust = Math.min(100, s.population.trust + 8);
+                            s.population.health = Math.min(100, s.population.health + 3);
+                            return 'Sivil bilgilendirme masaları kuruldu (+8 Güven).';
+                        }
+                    },
+                    {
+                        label: 'Radyo Üzerinden Genel Duyuru Yap (+2 Güven)',
+                        desc: 'Maliyetsiz standart bilgilendirme yapılır.',
+                        apply(s) {
+                            s.population.trust = Math.min(100, s.population.trust + 2);
+                            return 'Bölgesel radyodan düzenli durum bülteni yayınlandı.';
+                        }
+                    }
+                ]
+            }
+        ];
+
+        const INITIAL_MISSIONS = [
+            {
+                id: 'm_evac_1',
+                title: 'İlk Tahliye Dalgasını Tamamla',
+                desc: 'Pripyat bölgesinden en az 5.000 sivilin güvenli bölgeye tahliyesini sağla.',
+                targetText: 'Tahliye Edilen: 5.000 Kişi',
+                rewardText: '+800 Bütçe, +5 Halk Güveni',
+                check(s) {
+                    return s.scenarioId === 'crisis1986'
+                        ? s.population.evacuated >= 5000
+                        : s.population.safeZonePop >= 10000;
+                },
+                reward(s) {
+                    s.resources.budget += 800;
+                    s.population.trust = Math.min(100, s.population.trust + 5);
+                }
+            },
+            {
+                id: 'm_medical_stock',
+                title: 'Stratejik Tıbbi Rezerv Oluştur',
+                desc: 'Saha hastaneleri için tıbbi malzeme stoğunu 900 birimin üzerine çıkar.',
+                targetText: 'Tıbbi Malzeme >= 900',
+                rewardText: '+600 Bütçe, +5 Sağlık',
+                check(s) {
+                    return s.resources.medical >= 900;
+                },
+                reward(s) {
+                    s.resources.budget += 600;
+                    s.population.health = Math.min(100, s.population.health + 5);
+                }
+            },
+            {
+                id: 'm_research_data',
+                title: 'Bilimsel Saha Analizi',
+                desc: 'Araştırma laboratuvarlarında en az 60 veri puanı topla ve çevresel riski azalt.',
+                targetText: 'Araştırma Puanı >= 60',
+                rewardText: '+500 Bütçe, +50 Ekipman',
+                check(s) {
+                    return s.research.dataPoints >= 60;
+                },
+                reward(s) {
+                    s.resources.budget += 500;
+                    s.resources.equipment += 50;
+                }
+            },
+            {
+                id: 'm_public_trust',
+                title: 'Kamu Güvenini Sağla',
+                desc: 'Kriz yönetimi sürecinde halkın güven seviyesini %85 veya üzerine çıkar.',
+                targetText: 'Halk Güveni >= %85',
+                rewardText: '+1000 Bütçe, +30 Personel',
+                check(s) {
+                    return s.population.trust >= 85;
+                },
+                reward(s) {
+                    s.resources.budget += 1000;
+                    s.resources.staff += 30;
+                }
+            },
+            {
+                id: 'm_shelter_cap',
+                title: 'Barınma Altyapısını Güçlendir',
+                desc: 'Güvenli bölgedeki toplam barınma kapasitesini 21.000 kişiye yükselt.',
+                targetText: 'Barınma Kapasitesi >= 21.000',
+                rewardText: '+900 Bütçe, +400 Gıda',
+                check(s) {
+                    return s.population.shelterCapacity >= 21000;
+                },
+                reward(s) {
+                    s.resources.budget += 900;
+                    s.resources.food += 400;
+                }
+            }
+        ];
+
+        // ==================== 3. KAYIT YÖNETİMİ (LOCALSTORAGE) ====================
+        const StorageManager = {
+            SAVE_KEY: 'chernobyl_last_shift_save_v1',
+            STATS_KEY: 'chernobyl_last_shift_stats_v1',
+            SETTINGS_KEY: 'chernobyl_last_shift_settings_v1',
+
+            saveGame(state) {
+                try {
+                    localStorage.setItem(this.SAVE_KEY, JSON.stringify(state));
+                    return true;
+                } catch (e) {
+                    console.error('Kayıt hatası:', e);
+                    return false;
+                }
+            },
+
+            loadGame() {
+                try {
+                    const raw = localStorage.getItem(this.SAVE_KEY);
+                    if (!raw) return null;
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || !parsed.scenarioId || !parsed.resources) return null;
+                    return parsed;
+                } catch (e) {
+                    console.error('Kayıt okuma hatası:', e);
+                    return null;
+                }
+            },
+
+            clearGame() {
+                try {
+                    localStorage.removeItem(this.SAVE_KEY);
+                } catch (e) {}
+            },
+
+            getGlobalStats() {
+                const defaults = {
+                    gamesPlayed: 0,
+                    daysSurvived: 0,
+                    totalEvacuated: 0,
+                    decisionsMade: 0,
+                    missionsCompleted: 0
+                };
+                try {
+                    const raw = localStorage.getItem(this.STATS_KEY);
+                    return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+                } catch (e) {
+                    return defaults;
+                }
+            },
+
+            updateGlobalStats(patch) {
+                try {
+                    const current = this.getGlobalStats();
+                    const updated = { ...current, ...patch };
+                    localStorage.setItem(this.STATS_KEY, JSON.stringify(updated));
+                } catch (e) {}
+            },
+
+            getSettings() {
+                const defaults = {
+                    soundEnabled: false,
+                    crtEnabled: true,
+                    autoSave: true
+                };
+                try {
+                    const raw = localStorage.getItem(this.SETTINGS_KEY);
+                    return raw ? { ...defaults, ...JSON.parse(raw) } : defaults;
+                } catch (e) {
+                    return defaults;
+                }
+            },
+
+            saveSettings(settings) {
+                try {
+                    localStorage.setItem(this.SETTINGS_KEY, JSON.stringify(settings));
+                } catch (e) {}
+            }
+        };
+
+        // ==================== 4. ANA OYUN MOTORU VE DURUM YÖNETİMİ ====================
+        const GameEngine = {
+            state: null,
+            activeTab: 'overview',
+            selectedMapLocId: 'pripyat_center',
+            speed: 1, // 0 = Duraklatıldı, 1 = 1x, 2 = 2x, 3 = 3x
+            isRunning: false,
+            loopTimer: null,
+            modalHistory: [],
+
+            init() {
+                const settings = StorageManager.getSettings();
+                SoundSystem.setEnabled(settings.soundEnabled);
+                this.applyCrtSetting(settings.crtEnabled);
+                this.refreshMainMenuState();
+                this.bindGlobalEvents();
+            },
+
+            applyCrtSetting(enabled) {
+                if (enabled) {
+                    document.body.classList.remove('crt-disabled');
+                } else {
+                    document.body.classList.add('crt-disabled');
+                }
+            },
+
+            refreshMainMenuState() {
+                const saved = StorageManager.loadGame();
+                const btnContinue = document.getElementById('btnMenuContinue');
+                const subtext = document.getElementById('continueSubtext');
+                const badge = document.getElementById('menuSaveBadge');
+
+                if (saved) {
+                    btnContinue.disabled = false;
+                    const scenName = saved.scenarioId === 'crisis1986' ? '1986 KRİZ' : 'MODERN';
+                    subtext.textContent = `[GÜN ${saved.day} - ${scenName}]`;
+                    subtext.className = 'text-xs text-[#65D68A]';
+                    badge.textContent = `KAYITLI OTURUM MEVCUT (GÜN ${saved.day})`;
+                    badge.className = 'text-[#65D68A]';
+                } else {
+                    btnContinue.disabled = true;
+                    subtext.textContent = '[KAYIT YOK]';
+                    subtext.className = 'text-xs text-[#7B8E9B]';
+                    badge.textContent = 'AKTİF KAYIT BULUNAMADI';
+                    badge.className = 'text-[#7B8E9B]';
+                }
+            },
+
+            createNewGameState(scenarioId) {
+                const sc = SCENARIOS[scenarioId] || SCENARIOS.crisis1986;
+                const missions = INITIAL_MISSIONS.map(m => ({
+                    id: m.id,
+                    title: m.title,
+                    desc: m.desc,
+                    targetText: m.targetText,
+                    rewardText: m.rewardText,
+                    accepted: m.id === 'm_evac_1',
+                    completed: false,
+                    claimed: false
+                }));
+
+                const firstEvent = this.buildEventInstance(EVENT_TEMPLATES[0], 1, sc.startDate);
+
+                return {
+                    scenarioId: sc.id,
+                    day: 1,
+                    date: { ...sc.startDate },
+                    resources: { ...sc.initialResources },
+                    population: { ...sc.initialPopulation },
+                    research: { ...sc.initialResearch },
+                    missions,
+                    activeEvents: [firstEvent],
+                    resolvedEvents: [],
+                    logs: [
+                        {
+                            time: this.formatDate(sc.startDate),
+                            type: 'SİSTEM',
+                            text: `${sc.code}: ${sc.title} başlatıldı. Komuta yetkisi devralındı.`
+                        },
+                        {
+                            time: this.formatDate(sc.startDate),
+                            type: 'UYARI',
+                            text: 'İlk saha raporları ve tahliye talepleri kontrol ekranına ulaştı.'
+                        }
+                    ],
+                    stats: {
+                        totalEvacuated: 0,
+                        decisionsMade: 0,
+                        missionsCompleted: 0
+                    }
+                };
+            },
+
+            buildEventInstance(template, day, dateObj) {
+                return {
+                    uid: 'evt_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+                    templateId: template.id,
+                    title: template.title,
+                    importance: template.importance,
+                    desc: template.desc,
+                    dayCreated: day,
+                    dateStr: this.formatDate(dateObj)
+                };
+            },
+
+            startNewGame(scenarioId) {
+                this.state = this.createNewGameState(scenarioId);
+                const gStats = StorageManager.getGlobalStats();
+                StorageManager.updateGlobalStats({ gamesPlayed: gStats.gamesPlayed + 1 });
+                StorageManager.saveGame(this.state);
+                this.enterGameScreen();
+                SoundSystem.notify();
+                this.showToast('Yeni operasyon başlatıldı: ' + SCENARIOS[scenarioId].title, 'success');
+            },
+
+            continueSavedGame() {
+                const loaded = StorageManager.loadGame();
+                if (!loaded) {
+                    this.showToast('Yüklenecek kayıt bulunamadı.', 'danger');
+                    return;
+                }
+                this.state = loaded;
+                this.enterGameScreen();
+                SoundSystem.notify();
+                this.showToast(`Kayıt yüklendi — Gün ${this.state.day}`, 'success');
+            },
+
+            enterGameScreen() {
+                document.getElementById('mainMenuScreen').classList.add('hidden');
+                document.getElementById('gameScreen').classList.remove('hidden');
+                this.activeTab = 'overview';
+                this.setSpeed(1);
+                this.startLoop();
+                this.renderAll();
+            },
+
+            returnToMainMenu() {
+                this.stopLoop();
+                if (this.state && StorageManager.getSettings().autoSave) {
+                    StorageManager.saveGame(this.state);
+                }
+                document.getElementById('gameScreen').classList.add('hidden');
+                document.getElementById('mainMenuScreen').classList.remove('hidden');
+                this.refreshMainMenuState();
+            },
+
+            startLoop() {
+                this.stopLoop();
+                this.isRunning = true;
+                // Her 1000ms'de hız çarpanına göre zaman ilerler
+                this.loopTimer = setInterval(() => {
+                    if (!this.isRunning || this.speed === 0 || !this.state) return;
+                    this.advanceHours(this.speed);
+                }, 1200);
+            },
+
+            stopLoop() {
+                this.isRunning = false;
+                if (this.loopTimer) {
+                    clearInterval(this.loopTimer);
+                    this.loopTimer = null;
+                }
+            },
+
+            setSpeed(newSpeed) {
+                this.speed = newSpeed;
+                const map = {
+                    0: 'btnSpeedPause',
+                    1: 'btnSpeed1x',
+                    2: 'btnSpeed2x',
+                    3: 'btnSpeed3x'
+                };
+                Object.entries(map).forEach(([spd, id]) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (Number(spd) === newSpeed) {
+                        el.classList.add('btn-primary');
+                    } else {
+                        el.classList.remove('btn-primary');
+                    }
+                });
+            },
+
+            advanceHours(hours) {
+                if (!this.state) return;
+                const d = this.state.date;
+                d.hour += hours;
+
+                while (d.hour >= 24) {
+                    d.hour -= 24;
+                    this.onNewDay();
+                }
+
+                this.updateTopHud();
+            },
+
+            advanceOneFullDay() {
+                if (!this.state) return;
+                SoundSystem.click();
+                this.state.date.hour = 8;
+                this.onNewDay();
+                this.renderAll();
+                this.showToast(`Gün ${this.state.day} başladı. Günlük raporlar güncellendi.`, 'info');
+            },
+
+            onNewDay() {
+                const s = this.state;
+                s.day += 1;
+                s.date.day += 1;
+
+                // Ay geçişi kontrolü
+                if (s.date.day > 30) {
+                    s.date.day = 1;
+                    s.date.month += 1;
+                    if (s.date.month > 12) {
+                        s.date.month = 1;
+                        s.date.year += 1;
+                    }
+                }
+
+                // Günlük kaynak tüketimi ve üretimi
+                const activePopFactor = Math.max(1, Math.round((s.population.safeZonePop + (s.population.totalPripyat - s.population.evacuated) * 0.2) / 500));
+                const foodConsumed = 45 + activePopFactor * 3;
+                const waterConsumed = 55 + activePopFactor * 3;
+                const staffWage = Math.round(s.resources.staff * 0.6);
+
+                s.resources.food = Math.max(0, s.resources.food - foodConsumed);
+                s.resources.water = Math.max(0, s.resources.water - waterConsumed);
+                s.resources.budget = Math.max(0, s.resources.budget - staffWage + 220); // Günlük temel ödenek +220
+
+                // Kaynak yetersizliği cezaları
+                if (s.resources.food === 0 || s.resources.water === 0) {
+                    s.population.trust = Math.max(0, s.population.trust - 5);
+                    s.population.health = Math.max(0, s.population.health - 4);
+                    this.addLog('ALARM', 'Gıda veya su stoğu tükendi! Halk sağlığı ve güveni düşüyor.');
+                    SoundSystem.alarm();
+                }
+
+                // Barınma kapasitesi kontrolü
+                if (s.population.safeZonePop > s.population.shelterCapacity) {
+                    s.population.health = Math.max(0, s.population.health - 3);
+                    s.population.trust = Math.max(0, s.population.trust - 3);
+                    this.addLog('UYARI', 'Güvenli bölgede barınma kapasitesi aşıldı! Yeni barınak kurun.');
+                }
+
+                // Bilimsel araştırma günlük ilerlemesi
+                const labGain = Math.round(s.research.activeTeams * 4);
+                s.research.dataPoints += labGain;
+
+                // Yeni rastgele olay tetikleme (Maksimum 3 bekleyen olay)
+                if (s.activeEvents.length < 3 && Math.random() < 0.75) {
+                    const available = EVENT_TEMPLATES.filter(
+                        t => !s.activeEvents.some(ae => ae.templateId === t.id)
+                    );
+                    if (available.length > 0) {
+                        const pick = available[Math.floor(Math.random() * available.length)];
+                        const evt = this.buildEventInstance(pick, s.day, s.date);
+                        s.activeEvents.unshift(evt);
+                        this.addLog('OLAY', `Yeni gelişme: ${evt.title}`);
+                        SoundSystem.notify();
+                    }
+                }
+
+                // Görev durumlarını kontrol et
+                this.checkMissionsProgress();
+
+                // İstatistik ve Otomatik Kayıt
+                const gStats = StorageManager.getGlobalStats();
+                StorageManager.updateGlobalStats({
+                    daysSurvived: Math.max(gStats.daysSurvived, s.day)
+                });
+
+                if (StorageManager.getSettings().autoSave) {
+                    StorageManager.saveGame(s);
+                }
+
+                this.renderAll();
+            },
+
+            checkMissionsProgress() {
+                if (!this.state) return;
+                this.state.missions.forEach(m => {
+                    const def = INITIAL_MISSIONS.find(im => im.id === m.id);
+                    if (def && !m.completed && def.check(this.state)) {
+                        m.completed = true;
+                        this.addLog('GÖREV', `Görev şartı tamamlandı: "${m.title}" — Ödül alınabilir!`);
+                        SoundSystem.notify();
+                    }
+                });
+            },
+
+            addLog(type, text) {
+                if (!this.state) return;
+                this.state.logs.unshift({
+                    time: this.formatDate(this.state.date),
+                    type,
+                    text
+                });
+                if (this.state.logs.length > 50) {
+                    this.state.logs.pop();
+                }
+            },
+
+            formatDate(d) {
+                const dd = String(d.day).padStart(2, '0');
+                const mm = String(d.month).padStart(2, '0');
+                const hh = String(d.hour).padStart(2, '0');
+                return `${dd}.${mm}.${d.year} ${hh}:00`;
+            },
+
+            // ==================== 5. KARAR, HARİTA VE GÖREV AKSİYONLARI ====================
+            resolveEventOption(eventUid, optionIndex) {
+                if (!this.state) return;
+                const evtIdx = this.state.activeEvents.findIndex(e => e.uid === eventUid);
+                if (evtIdx === -1) return;
+
+                const evt = this.state.activeEvents[evtIdx];
+                const template = EVENT_TEMPLATES.find(t => t.id === evt.templateId);
+                if (!template || !template.options[optionIndex]) return;
+
+                const option = template.options[optionIndex];
+                const resultMsg = option.apply(this.state);
+
+                if (resultMsg && resultMsg.startsWith('Yetersiz')) {
+                    SoundSystem.alarm();
+                    this.showToast(resultMsg, 'danger');
+                    return;
+                }
+
+                SoundSystem.click();
+                this.state.activeEvents.splice(evtIdx, 1);
+                this.state.resolvedEvents.unshift({
+                    title: evt.title,
+                    choice: option.label,
+                    result: resultMsg,
+                    date: this.formatDate(this.state.date)
+                });
+
+                this.state.stats.decisionsMade += 1;
+                const gStats = StorageManager.getGlobalStats();
+                StorageManager.updateGlobalStats({
+                    decisionsMade: gStats.decisionsMade + 1,
+                    totalEvacuated: gStats.totalEvacuated + (this.state.stats.totalEvacuated || 0)
+                });
+
+                this.addLog('KARAR', `${evt.title} -> ${resultMsg}`);
+                this.checkMissionsProgress();
+                if (StorageManager.getSettings().autoSave) StorageManager.saveGame(this.state);
+                this.renderAll();
+                this.showToast(resultMsg, 'success');
+            },
+
+            triggerMapAction(locId) {
+                if (!this.state) return;
+                const loc = MAP_LOCATIONS.find(l => l.id === locId);
+                if (!loc) return;
+
+                const r = this.state.resources;
+                const c = loc.cost;
+
+                if ((c.budget && r.budget < c.budget) ||
+                    (c.food && r.food < c.food) ||
+                    (c.water && r.water < c.water) ||
+                    (c.medical && r.medical < c.medical) ||
+                    (c.staff && r.staff < c.staff) ||
+                    (c.equipment && r.equipment < c.equipment)) {
+                    SoundSystem.alarm();
+                    this.showToast('Bu saha operasyonu için kaynaklar yetersiz!', 'danger');
+                    return;
+                }
+
+                const applied = loc.applyEffect(this.state);
+                if (applied === false) {
+                    this.showToast('Bu bölgede tahliye edilecek sivil kalmadı.', 'info');
+                    return;
+                }
+
+                if (c.budget) r.budget -= c.budget;
+                if (c.food) r.food -= c.food;
+                if (c.water) r.water -= c.water;
+                if (c.medical) r.medical -= c.medical;
+                if (c.staff) r.staff -= c.staff;
+                if (c.equipment) r.equipment -= c.equipment;
+
+                SoundSystem.notify();
+                this.addLog('SAHA', `${loc.name}: ${loc.actionLabel} uygulandı.`);
+                this.checkMissionsProgress();
+                if (StorageManager.getSettings().autoSave) StorageManager.saveGame(this.state);
+                this.renderAll();
+                this.showToast(`${loc.name}: ${loc.effectText}`, 'success');
+            },
+
+            buySupply(type) {
+                if (!this.state) return;
+                const r = this.state.resources;
+                const catalog = {
+                    food: { cost: 200, amount: 300, label: 'Gıda Paketi (+300)' },
+                    water: { cost: 180, amount: 350, label: 'Su Tankeri (+350)' },
+                    medical: { cost: 300, amount: 150, label: 'Tıbbi Kit (+150)' },
+                    staff: { cost: 350, amount: 20, label: 'Uzman Personel (+20)' },
+                    equipment: { cost: 320, amount: 45, label: 'Teknik Ekipman (+45)' }
+                };
+
+                const item = catalog[type];
+                if (!item) return;
+
+                if (r.budget < item.cost) {
+                    SoundSystem.alarm();
+                    this.showToast(`Yetersiz bütçe! (${item.cost} gerekli)`, 'danger');
+                    return;
+                }
+
+                r.budget -= item.cost;
+                r[type] += item.amount;
+                SoundSystem.click();
+                this.addLog('LOJİSTİK', `${item.label} tedarik edildi.`);
+                this.checkMissionsProgress();
+                this.renderAll();
+                this.showToast(`${item.label} envantere eklendi.`, 'success');
+            },
+
+            runResearchProject(projectType) {
+                if (!this.state) return;
+                const s = this.state;
+
+                if (projectType === 'env_scan') {
+                    if (s.resources.budget < 250 || s.research.dataPoints < 20) {
+                        SoundSystem.alarm();
+                        this.showToast('250 Bütçe ve 20 Araştırma Puanı gerekli!', 'danger');
+                        return;
+                    }
+                    s.resources.budget -= 250;
+                    s.research.dataPoints -= 20;
+                    s.research.envIndex = Math.max(5, s.research.envIndex - 7);
+                    s.research.completedStudies += 1;
+                    SoundSystem.notify();
+                    this.addLog('ARAŞTIRMA', 'Çevresel izolasyon analizi tamamlandı. Risk endeksi -7 düştü.');
+                    this.showToast('Çevresel Risk Endeksi -7 azaltıldı!', 'success');
+                } else if (projectType === 'upgrade_lab') {
+                    if (s.resources.budget < 450 || s.resources.equipment < 30) {
+                        SoundSystem.alarm();
+                        this.showToast('450 Bütçe ve 30 Ekipman gerekli!', 'danger');
+                        return;
+                    }
+                    s.resources.budget -= 450;
+                    s.resources.equipment -= 30;
+                    s.research.activeTeams += 1;
+                    s.research.labCapacity += 40;
+                    SoundSystem.notify();
+                    this.addLog('ARAŞTIRMA', 'Yeni mobil laboratuvar ekibi kuruldu (+1 Ekip).');
+                    this.showToast('Araştırma ekibi sayısı +1 artırıldı!', 'success');
+                }
+
+                this.checkMissionsProgress();
+                this.renderAll();
+            },
+
+            acceptMission(missionId) {
+                if (!this.state) return;
+                const m = this.state.missions.find(x => x.id === missionId);
+                if (!m || m.accepted) return;
+                m.accepted = true;
+                SoundSystem.click();
+                this.addLog('GÖREV', `Yeni görev kabul edildi: ${m.title}`);
+                this.renderAll();
+                this.showToast(`Görev kabul edildi: ${m.title}`, 'info');
+            },
+
+            claimMissionReward(missionId) {
+                if (!this.state) return;
+                const m = this.state.missions.find(x => x.id === missionId);
+                const def = INITIAL_MISSIONS.find(im => im.id === missionId);
+                if (!m || !def || !m.completed || m.claimed) return;
+
+                def.reward(this.state);
+                m.claimed = true;
+                this.state.stats.missionsCompleted += 1;
+                const gStats = StorageManager.getGlobalStats();
+                StorageManager.updateGlobalStats({ missionsCompleted: gStats.missionsCompleted + 1 });
+
+                SoundSystem.notify();
+                this.addLog('GÖREV', `Görev ödülü alındı: ${m.title} (${m.rewardText})`);
+                if (StorageManager.getSettings().autoSave) StorageManager.saveGame(this.state);
+                this.renderAll();
+                this.showToast(`Görev Tamamlandı! Ödül: ${m.rewardText}`, 'success');
+            },
+
+            // ==================== 6. ARAYÜZ RENDER FONKSİYONLARI ====================
+            renderAll() {
+                if (!this.state) return;
+                this.updateTopHud();
+                this.updateSidebarBadges();
+                this.renderActiveTab();
+            },
+
+            updateTopHud() {
+                const s = this.state;
+                const sc = SCENARIOS[s.scenarioId];
+                document.getElementById('topScenarioTitle').textContent = `${sc.code}: ${sc.title}`;
+                document.getElementById('hudDateTime').textContent = this.formatDate(s.date);
+                document.getElementById('hudDayCounter').textContent = `GÜN ${s.day}`;
+
+                document.getElementById('barBudget').textContent = s.resources.budget;
+                document.getElementById('barFood').textContent = s.resources.food;
+                document.getElementById('barWater').textContent = s.resources.water;
+                document.getElementById('barMedical').textContent = s.resources.medical;
+                document.getElementById('barStaff').textContent = s.resources.staff;
+                document.getElementById('barEquipment').textContent = s.resources.equipment;
+
+                // Alarm ışığı kontrolü
+                const alarmEl = document.getElementById('topAlarmLight');
+                if (s.activeEvents.length >= 2 || s.population.trust < 40 || s.resources.food < 150) {
+                    alarmEl.className = 'w-2.5 h-2.5 rounded-full bg-[#E34B4B] alarm-active';
+                } else {
+                    alarmEl.className = 'w-2.5 h-2.5 rounded-full bg-[#65D68A]';
+                }
+            },
+
+            updateSidebarBadges() {
+                const s = this.state;
+                const activeMissionsCount = s.missions.filter(m => !m.claimed).length;
+                document.getElementById('badgeMissions').textContent = activeMissionsCount;
+                document.getElementById('badgeEvents').textContent = s.activeEvents.length;
+
+                document.getElementById('sideTrustVal').textContent = `%${s.population.trust}`;
+                document.getElementById('sideTrustBar').style.width = `${s.population.trust}%`;
+
+                document.getElementById('sideStabilityVal').textContent = `%${s.population.stability}`;
+                document.getElementById('sideStabilityBar').style.width = `${s.population.stability}%`;
+            },
+
+            switchTab(tabName) {
+                SoundSystem.click();
+                this.activeTab = tabName;
+                document.querySelectorAll('.nav-item').forEach(btn => {
+                    if (btn.dataset.tab === tabName) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                this.closeMobileMenu();
+                this.renderActiveTab();
+            },
+
+            renderActiveTab() {
+                const container = document.getElementById('tabContentArea');
+                if (!container || !this.state) return;
+
+                switch (this.activeTab) {
+                    case 'overview':
+                        container.innerHTML = this.buildOverviewHtml();
+                        break;
+                    case 'map':
+                        container.innerHTML = this.buildMapHtml();
+                        break;
+                    case 'resources':
+                        container.innerHTML = this.buildResourcesHtml();
+                        break;
+                    case 'population':
+                        container.innerHTML = this.buildPopulationHtml();
+                        break;
+                    case 'research':
+                        container.innerHTML = this.buildResearchHtml();
+                        break;
+                    case 'missions':
+                        container.innerHTML = this.buildMissionsHtml();
+                        break;
+                    case 'events':
+                        container.innerHTML = this.buildEventsHtml();
+                        break;
+                    case 'reports':
+                        container.innerHTML = this.buildReportsHtml();
+                        break;
+                }
+            },
+
+            buildOverviewHtml() {
+                const s = this.state;
+                const remainingPop = Math.max(0, s.population.totalPripyat - s.population.evacuated);
+                const evacPercent = Math.min(100, Math.round((s.population.evacuated / Math.max(1, s.population.totalPripyat)) * 100));
+                const urgentEvent = s.activeEvents[0];
+
+                return `
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#1F2E38] pb-2">
+                            <h2 class="font-display text-lg sm:text-xl text-[#65D68A] font-bold">KOMUTA MERKEZİ — GENEL DURUM ÖZETİ</h2>
+                            <span class="text-xs text-[#7B8E9B]">TELEMETRİ AKIŞI: AKTİF</span>
+                        </div>
+
+                        <!-- 4 Ana Gösterge Kartı -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                            <div class="soviet-panel p-3.5 rounded">
+                                <div class="text-[11px] text-[#7B8E9B]">TAHLİYE İLERLEMESİ</div>
+                                <div class="text-xl font-bold text-[#65D68A] mt-1">${s.population.evacuated.toLocaleString('tr-TR')} / ${s.population.totalPripyat.toLocaleString('tr-TR')}</div>
+                                <div class="w-full bg-[#1F2E38] h-1.5 rounded mt-2">
+                                    <div class="bg-[#65D68A] h-full" style="width: ${evacPercent}%"></div>
+                                </div>
+                                <div class="text-[11px] text-[#7B8E9B] mt-1">Bölgede Kalan: ${remainingPop.toLocaleString('tr-TR')}</div>
+                            </div>
+
+                            <div class="soviet-panel p-3.5 rounded">
+                                <div class="text-[11px] text-[#7B8E9B]">HALK GÜVENİ &amp; SAĞLIK</div>
+                                <div class="text-xl font-bold text-[#E9B949] mt-1">%${s.population.trust} <span class="text-xs text-[#D7E0E5]">Güven</span></div>
+                                <div class="text-xs text-[#65D68A] mt-2">Sağlık İndeksi: %${s.population.health}</div>
+                                <div class="text-[11px] text-[#7B8E9B] mt-1">Barınma: ${s.population.safeZonePop.toLocaleString('tr-TR')} / ${s.population.shelterCapacity.toLocaleString('tr-TR')}</div>
+                            </div>
+
+                            <div class="soviet-panel p-3.5 rounded">
+                                <div class="text-[11px] text-[#7B8E9B]">ÇEVRESEL GÖZLEM ENDİKSİ</div>
+                                <div class="text-xl font-bold ${s.research.envIndex > 50 ? 'text-[#E34B4B]' : 'text-[#65D68A]'} mt-1">${s.research.envIndex} / 100</div>
+                                <div class="text-xs text-[#D7E0E5] mt-2">Araştırma Verisi: ${s.research.dataPoints} Puan</div>
+                                <div class="text-[11px] text-[#7B8E9B] mt-1">Aktif Saha Ekibi: ${s.research.activeTeams} Birim</div>
+                            </div>
+
+                            <div class="soviet-panel p-3.5 rounded">
+                                <div class="text-[11px] text-[#7B8E9B]">BEKLEYEN KRİZ KARARLARI</div>
+                                <div class="text-xl font-bold ${s.activeEvents.length > 0 ? 'text-[#E34B4B]' : 'text-[#65D68A]'} mt-1">${s.activeEvents.length} ACİL OLAY</div>
+                                <div class="mt-2">
+                                    <button onclick="GameEngine.switchTab('events')" class="btn-terminal btn-warning w-full py-1.5 px-2 rounded text-xs">
+                                        OLAY PANELİNE GİT &gt;
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Orta Bölüm: Acil Karar Kartı + Son Terminal Kayıtları -->
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            <!-- Aktif Öncelikli Karar -->
+                            <div class="lg:col-span-7 soviet-panel p-4 rounded flex flex-col justify-between">
+                                <div>
+                                    <div class="flex justify-between items-center border-b border-[#1F2E38] pb-2 mb-3">
+                                        <span class="text-xs font-bold text-[#E9B949]">ÖNCELİKLİ KARAR TERMİNALİ</span>
+                                        <span class="text-[11px] text-[#7B8E9B]">${urgentEvent ? urgentEvent.dateStr : 'DURUM STABİL'}</span>
+                                    </div>
+                                    ${urgentEvent ? this.buildSingleEventCardHtml(urgentEvent, true) : `
+                                        <div class="py-8 text-center text-[#7B8E9B] space-y-2">
+                                            <div class="text-[#65D68A] font-bold">ŞU AN BEKLEYEN KRİTİK OLAY YOK</div>
+                                            <p class="text-xs">Harita üzerinden saha operasyonları başlatabilir veya zamanı ilerletebilirsiniz.</p>
+                                            <button onclick="GameEngine.switchTab('map')" class="btn-terminal btn-primary px-4 py-2 rounded text-xs mt-2">
+                                                PRİPYAT HARİTASINI AÇ
+                                            </button>
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+
+                            <!-- Canlı Komuta Kayıtları (Loglar) -->
+                            <div class="lg:col-span-5 soviet-panel p-4 rounded flex flex-col">
+                                <div class="flex justify-between items-center border-b border-[#1F2E38] pb-2 mb-3">
+                                    <span class="text-xs font-bold text-[#65D68A]">CANLI TELEMETRİ &amp; İLETİŞİM AKIŞI</span>
+                                    <span class="w-2 h-2 rounded-full bg-[#65D68A] animate-ping"></span>
+                                </div>
+                                <div class="space-y-2 max-h-72 overflow-y-auto pr-1 text-xs">
+                                    ${s.logs.slice(0, 12).map(log => {
+                                        let badgeColor = 'text-[#65D68A]';
+                                        if (log.type === 'ALARM' || log.type === 'OLAY') badgeColor = 'text-[#E34B4B]';
+                                        if (log.type === 'UYARI' || log.type === 'KARAR') badgeColor = 'text-[#E9B949]';
+                                        return `
+                                            <div class="bg-[#080D12] border border-[#1F2E38] p-2 rounded">
+                                                <div class="flex justify-between text-[10px] text-[#7B8E9B] mb-0.5">
+                                                    <span class="font-bold ${badgeColor}">[${log.type}]</span>
+                                                    <span>${log.time}</span>
+                                                </div>
+                                                <div class="text-[#D7E0E5]">${log.text}</div>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            buildMapHtml() {
+                const selectedLoc = MAP_LOCATIONS.find(l => l.id === this.selectedMapLocId) || MAP_LOCATIONS[0];
+
+                return `
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#1F2E38] pb-2">
+                            <div>
+                                <h2 class="font-display text-lg sm:text-xl text-[#65D68A] font-bold">PRİPYAT VE ÇEVRESİ — TAKTİK RADAR HARİTASI</h2>
+                                <p class="text-[11px] text-[#7B8E9B]">Simülasyon amaçlı temsili bölge haritası. İşaretçilere dokunarak operasyon başlatın.</p>
+                            </div>
+                            <span class="text-xs bg-[#111A20] border border-[#2A3F4D] px-2.5 py-1 rounded text-[#E9B949]">SEKTÖR: PRİPYAT-10KM</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            <!-- Etkileşimli SVG Harita -->
+                            <div class="lg:col-span-8 soviet-panel p-2 sm:p-3 rounded relative overflow-hidden bg-[#060A0E]">
+                                <svg viewBox="0 0 800 480" class="w-full h-auto rounded border border-[#1F2E38] touch-manipulation">
+                                    <!-- Radar Izgarası -->
+                                    <defs>
+                                        <pattern id="mapGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#15242E" stroke-width="1"/>
+                                        </pattern>
+                                    </defs>
+                                    <rect width="800" height="480" fill="#070C11" />
+                                    <rect width="800" height="480" fill="url(#mapGrid)" />
+
+                                    <!-- Pripyat Nehri (Stilize) -->
+                                    <path d="M 380,0 Q 430,130 490,220 T 620,480" fill="none" stroke="#13334C" stroke-width="28" stroke-linecap="round" />
+                                    <path d="M 380,0 Q 430,130 490,220 T 620,480" fill="none" stroke="#1E4E75" stroke-width="2" stroke-dasharray="6 4" />
+
+                                    <!-- Yol ve Demiryolu Ağları -->
+                                    <path d="M 120,264 L 352,134 L 544,163 L 624,316 L 224,345 Z" fill="none" stroke="#2D3E4A" stroke-width="2" stroke-dasharray="5 5" />
+
+                                    <!-- Radar Tarama Halkaları -->
+                                    <g transform="translate(544, 163)">
+                                        <circle r="90" fill="none" stroke="#E34B4B" stroke-width="1" stroke-dasharray="4 4" opacity="0.4" />
+                                        <circle r="180" fill="none" stroke="#E9B949" stroke-width="1" stroke-dasharray="6 6" opacity="0.25" />
+                                        <circle r="290" fill="none" stroke="#65D68A" stroke-width="1" stroke-dasharray="8 8" opacity="0.2" />
+                                        <line x1="0" y1="0" x2="0" y2="-280" stroke="#65D68A" stroke-width="1.5" opacity="0.35" class="radar-sweep" />
+                                    </g>
+
+                                    <!-- Bölge İşaretçileri -->
+                                    ${MAP_LOCATIONS.map(loc => {
+                                        const cx = (loc.x / 100) * 800;
+                                        const cy = (loc.y / 100) * 480;
+                                        const isSelected = loc.id === this.selectedMapLocId;
+                                        return `
+                                            <g onclick="GameEngine.selectMapLocation('${loc.id}')" style="cursor: pointer;">
+                                                <circle cx="${cx}" cy="${cy}" r="14" fill="${loc.color}" opacity="0.25" class="${isSelected ? 'marker-ping' : ''}" />
+                                                <circle cx="${cx}" cy="${cy}" r="${isSelected ? 10 : 7}" fill="${loc.color}" stroke="#FFFFFF" stroke-width="${isSelected ? 2.5 : 1}" />
+                                                <rect x="${cx - 68}" y="${cy + 14}" width="136" height="22" rx="3" fill="#0B1217" stroke="${isSelected ? '#65D68A' : '#2A3F4D'}" stroke-width="1" />
+                                                <text x="${cx}" y="${cy + 28}" fill="#D7E0E5" font-size="10" font-family="Fira Code, monospace" text-anchor="middle" font-weight="${isSelected ? 'bold' : 'normal'}">
+                                                    ${loc.name.split(' ')[0]} ${loc.name.split(' ')[1] || ''}
+                                                </text>
+                                            </g>
+                                        `;
+                                    }).join('')}
+                                </svg>
+                            </div>
+
+                            <!-- Seçili Bölge Bilgi & Operasyon Paneli -->
+                            <div class="lg:col-span-4 soviet-panel p-4 rounded flex flex-col justify-between space-y-4">
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-start border-b border-[#1F2E38] pb-2">
+                                        <div>
+                                            <span class="text-[10px] px-2 py-0.5 rounded font-bold" style="background: ${selectedLoc.color}25; color: ${selectedLoc.color}; border: 1px solid ${selectedLoc.color};">
+                                                ${selectedLoc.type}
+                                            </span>
+                                            <h3 class="text-base font-bold text-white mt-1.5">${selectedLoc.name}</h3>
+                                        </div>
+                                    </div>
+
+                                    <p class="text-xs text-[#D7E0E5] leading-relaxed">
+                                        ${selectedLoc.desc}
+                                    </p>
+
+                                    <div class="bg-[#080D12] border border-[#1F2E38] p-3 rounded space-y-1.5 text-xs">
+                                        <div class="text-[#7B8E9B] font-bold">OPERASYON GEREKSİNİMİ:</div>
+                                        <div class="text-[#E9B949]">
+                                            ${Object.entries(selectedLoc.cost).map(([k, v]) => `${this.translateResourceKey(k)}: ${v}`).join(' | ')}
+                                        </div>
+                                        <div class="text-[#7B8E9B] font-bold pt-1">BEKLENEN ETKİ:</div>
+                                        <div class="text-[#65D68A]">${selectedLoc.effectText}</div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <button onclick="GameEngine.triggerMapAction('${selectedLoc.id}')" class="btn-terminal btn-primary w-full py-2.5 px-3 rounded text-xs font-bold">
+                                        &gt; ${selectedLoc.actionLabel}
+                                    </button>
+                                    <div class="grid grid-cols-2 gap-1.5 pt-2 border-t border-[#1F2E38]">
+                                        ${MAP_LOCATIONS.map(l => `
+                                            <button onclick="GameEngine.selectMapLocation('${l.id}')" class="btn-terminal py-1.5 px-2 rounded text-[11px] truncate ${l.id === selectedLoc.id ? 'border-[#65D68A] text-[#65D68A]' : ''}">
+                                                ${l.name.split(' ')[0]}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            selectMapLocation(locId) {
+                SoundSystem.click();
+                this.selectedMapLocId = locId;
+                this.renderActiveTab();
+            },
+
+            buildResourcesHtml() {
+                const r = this.state.resources;
+                const items = [
+                    { key: 'food', name: 'Gıda Stokları', val: r.food, cost: 200, gain: '+300 Gıda', desc: 'Sivil halk ve saha personelinin günlük beslenme ihtiyacı.' },
+                    { key: 'water', name: 'Temiz Su Rezervi', val: r.water, cost: 180, gain: '+350 Su', desc: 'Güvenli bölgeler ve sağlık birimleri için içme suyu.' },
+                    { key: 'medical', name: 'Tıbbi Malzeme', val: r.medical, cost: 300, gain: '+150 Tıbbi', desc: 'Sağlık taramaları ve acil müdahale kitleri.' },
+                    { key: 'staff', name: 'Uzman Personel', val: r.staff, cost: 350, gain: '+20 Personel', desc: 'Mühendisler, doktorlar, şoförler ve saha koordinatörleri.' },
+                    { key: 'equipment', name: 'Teknik Ekipman', val: r.equipment, cost: 320, gain: '+45 Ekipman', desc: 'Ölçüm cihazları, iş makineleri ve koruyucu donanımlar.' }
+                ];
+
+                return `
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#1F2E38] pb-2">
+                            <h2 class="font-display text-lg sm:text-xl text-[#65D68A] font-bold">KAYNAK VE LOJİSTİK YÖNETİMİ</h2>
+                            <div class="text-sm font-bold text-[#65D68A] bg-[#111A20] border border-[#65D68A] px-3 py-1 rounded">
+                                MEVCUT BÜTÇE: ${r.budget} BİRİM
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${items.map(it => `
+                                <div class="soviet-panel p-4 rounded flex flex-col justify-between space-y-3">
+                                    <div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-bold text-white text-sm">${it.name}</span>
+                                            <span class="text-lg font-bold text-[#E9B949]">${it.val}</span>
+                                        </div>
+                                        <p class="text-xs text-[#7B8E9B] mt-2">${it.desc}</p>
+                                    </div>
+                                    <button onclick="GameEngine.buySupply('${it.key}')" class="btn-terminal btn-primary w-full py-2 px-3 rounded text-xs font-bold">
+                                        TEDARİK ET (${it.gain} / -${it.cost} Bütçe)
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            },
+
+            buildPopulationHtml() {
+                const p = this.state.population;
+                const remaining = Math.max(0, p.totalPripyat - p.evacuated);
+
+                return `
+                    <div class="space-y-4">
+                        <div class="border-b border-[#1F2E38] pb-2">
+                            <h2 class="font-display text-lg sm:text-xl text-[#65D68A] font-bold">SİVİL HALK, TAHLİYE VE BARINMA DURUMU</h2>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="soviet-panel p-4 rounded space-y-3">
+                                <h3 class="text-sm font-bold text-[#E9B949] border-b border-[#1F2E38] pb-1.5">NÜFUS DAĞILIMI</h3>
+                                <div class="space-y-2 text-xs">
+                                    <div class="flex justify-between py-1 border-b border-[#1F2E38]/50">
+                                        <span class="text-[#7B8E9B]">Başlangıç Bölge Nüfusu:</span>
+                                        <span class="font-bold text-white">${p.totalPripyat.toLocaleString('tr-TR')}</span>
+                                    </div>
+                                    <div class="flex justify-between py-1 border-b border-[#1F2E38]/50">
+                                        <span class="text-[#7B8E9B]">Tahliye Edilen Sivil:</span>
+                                        <span class="font-bold text-[#65D68A]">${p.evacuated.toLocaleString('tr-TR')}</span>
+                                    </div>
+                                    <div class="flex justify-between py-1 border-b border-[#1F2E38]/50">
+                                        <span class="text-[#7B8E9B]">Bölgede Bekleyen Nüfus:</span>
+                                        <span class="font-bold text-[#E34B4B]">${remaining.toLocaleString('tr-TR')}</span>
+                                    </div>
+                                    <div class="flex justify-between py-1 border-b border-[#1F2E38]/50">
+                                        <span class="text-[#7B8E9B]">Güvenli Bölge Toplam Nüfusu:</span>
+                                        <span class="font-bold text-white">${p.safeZonePop.toLocaleString('tr-TR')}</span>
+                                    </div>
+                                    <div class="flex justify-between py-1">
+                                        <span class="text-[#7B8E9B]">Toplam Barınma Kapasitesi:</span>
+                                        <span class="font-bold ${p.safeZonePop > p.shelterCapacity ? 'text-[#E34B4B]' : 'text-[#65D68A]'}">${p.shelterCapacity.toLocaleString('tr-TR')}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="soviet-panel p-4 rounded space-y-4">
+                                <h3 class="text-sm font-bold text-[#65D68A] border-b border-[#1F2E38] pb-1.5">TOPLUMSAL GÖSTERGELER</h3>
+                                <div class="space-y-3 text-xs">
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span>Halkın Komuta Merkezine Güveni</span>
+                                            <span class="font-bold text-[#65D68A]">%${p.trust}</span>
+                                        </div>
+                                        <div class="w-full bg-[#1F2E38] h-2 rounded"><div class="bg-[#65D68A] h-full" style="width:${p.trust}%"></div></div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span>Genel Sağlık ve Refah Seviyesi</span>
+                                            <span class="font-bold text-[#E9B949]">%${p.health}</span>
+                                        </div>
+                                        <div class="w-full bg-[#1F2E38] h-2 rounded"><div class="bg-[#E9B949] h-full" style="width:${p.health}%"></div></div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span>Bölgesel Düzen ve Stabilite</span>
+                                            <span class="font-bold text-white">%${p.stability}</span>
+                                        </div>
+                                        <div class="w-full bg-[#1F2E38] h-2 rounded"><div class="bg-[#65D68A] h-full" style="width:${p.stability}%"></div></div>
+                                    </div>
+                                </div>
+                                <div class="pt-2 flex flex-wrap gap-2">
+                                    <button onclick="GameEngine.triggerMapAction('pripyat_center')" class="btn-terminal btn-primary flex-1 py-2 px-3 rounded text-xs">
+                                        TAHLİYE KONVOYU GÖNDER
+                                    </button>
+                                    <button onclick="GameEngine.triggerMapAction('evac_hub_south')" class="btn-terminal flex-1 py-2 px-3 rounded text-xs">
+                                        BARINAK KAPASİTESİ ARTIR
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            buildResearchHtml() {
+                const res = this.state.research;
+
+                return `
+                    <div class="space-y-4">
+                        <div class="border-b border-[#1F2E38] pb-2">
+                            <h2 class="font-display text-lg sm:text-xl text-[#65D68A] font-bold">BİLİMSEL GÖZLEM VE LABORATUVAR MERKEZİ</h2>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div class="soviet-panel p-3 rounded">
+                                <div class="text-[11px] text-[#7B8E9B]">ÇEVRESEL RİSK ENDİKSİ</div>
+                                <div class="text-xl font-bold ${res.envIndex > 50 ? 'text-[#E34B4B]' : 'text-[#65D68A]'} mt-1">${res.envIndex} / 100</div>
+                            </div>
+                            <div class="soviet-panel p-3 rounded">
+                                <div class="text-[11px] text-[#7B8E9B]">ARAŞTIRMA VERİSİ</div>
+                                <div class="text-xl font-bold text-[#E9B949] mt-1">${res.dataPoints} PUAN</div>
+                            </div>
+                            <div class="soviet-panel p-3 rounded">
+                                <div class="text-[11px] text-[#7B8E9B]">AKTİF SAHA EKİBİ</div>
+                                <div class="text-xl font-bold text-white mt-1">${res.activeTeams} EKİP</div>
+                            </div>
+                            <div class="soviet-panel p-3 rounded">
+                                <div class="text-[11px] text-[#7B8E9B]">TAMAMLANAN RAPOR</div>
+                                <div class="text-xl font-bold text-[#65D68A] mt-1">${res.completedStudies} ADET</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="soviet-panel p-4 rounded space-y-3">
+                                <h3 class="text-sm font-bold text-[#65D68A]">ÇEVRESEL İZOLASYON VE TOPRAK ANALİZİ</h3>
+                                <p class="text-xs text-[#D7E0E5]">
+                                    Toplanan saha verilerini işleyerek yüksek riskli bölgelerde izolasyon haritası çıkarır ve çevresel risk endeksini düşürür.
+                                </p>
+                                <div class="text-xs text-[#E9B949]">Gereksinim: 250 Bütçe + 20 Araştırma Puanı</div>
+                                <button onclick="GameEngine.runResearchProject('env_scan')" class="btn-terminal btn-primary w-full py-2 px-3 rounded text-xs font-bold">
+                                    ANALİZİ UYGULA (RİSK -7)
+                                </button>
+                            </div>
+
+                            <div class="soviet-panel p-4 rounded space-y-3">
+                                <h3 class="text-sm font-bold text-[#E9B949]">MOBİL LABORATUVAR KAPASİTESİNİ ARTIR</h3>
+                                <p class="text-xs text-[#D7E0E5]">
+                                    Yeni bir bilimsel ölçüm ekibi kurarak günlük otomatik araştırma puanı üretimini artırır.
+                                </p>
+                                <div class="text-xs text-[#E9B949]">Gereksinim: 450 Bütçe + 30 Ekipman</div>
+                                <button onclick="GameEngine.runResearchProject('upgrade_lab')" class="btn-terminal btn-warning w-full py-2 px-3 rounded text-xs font-bold">
+                                    YENİ EKİP KUR (+1 EKİP)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            buildMissionsHtml() {
+                const missions = this.state.missions;
+
+                return `
+                    <div class="space-y-4">
+                        <div class="border-b border-[#1F2E38] pb-2">
+                            <h2 class="font-display text-lg sm:text-xl text-[#65D68A] font-bold">OPERASYON GÖREVLERİ VE HEDEFLER</h2>
+                        </div>
+
+                        <div class="space-y-3">
+                            ${missions.map(m => {
+                                let statusBadge = '<span class="text-[11px] px-2 py-0.5 rounded bg-[#1F2E38] text-[#7B8E9B]">BEKLİYOR</span>';
+                                let actionBtn = `<button onclick="GameEngine.acceptMission('${m.id}')" class="btn-terminal px-3 py-1.5 rounded text-xs">GÖREVİ KABUL ET</button>`;
+
+                                if (m.claimed) {
+                                    statusBadge = '<span class="text-[11px] px-2 py-0.5 rounded bg-[#65D68A]/20 text-[#65D68A]">TAMAMLANDI</span>';
+                                    actionBtn = '<span class="text-xs text-[#65D68A] font-bold">[ÖDÜL ALINDI]</span>';
+                                } else if (m.completed) {
+                                    statusBadge = '<span class="text-[11px] px-2 py-0.5 rounded bg-[#E9B949]/20 text-[#E9B949] animate-pulse">ÖDÜL HAZIR</span>';
+                                    actionBtn = `<button onclick="GameEngine.claimMissionReward('${m.id}')" class="btn-terminal btn-primary px-3 py-1.5 rounded text-xs font-bold">ÖDÜLÜ AL</button>`;
+                                } else if (m.accepted) {
+                                    statusBadge = '<span class="text-[11px] px-2 py-0.5 rounded bg-[#65D68A]/15 text-[#65D68A]">AKTİF GÖREV</span>';
+                                    actionBtn = '<span class="text-xs text-[#E9B949]">[DEVAM EDİYOR]</span>';
+                                }
+
+                                return `
+                                    <div class="soviet-panel p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                        <div class="space-y-1">
+                                            <div class="flex items-center gap-2">
+                                                ${statusBadge}
+                                                <h3 class="font-bold text-white text-sm">${m.title}</h3>
+                                            </div>
+                                            <p class="text-xs text-[#D7E0E5]">${m.desc}</p>
+                                            <div class="text-[11px] text-[#7B8E9B]">
+                                                Hedef: <span class="text-white">${m.targetText}</span> | Ödül: <span class="text-[#65D68A]">${m.rewardText}</span>
+                                            </div>
+                                        </div>
+                                        <div class="shrink-0">
+                                            ${actionBtn}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            },
+
+            buildSingleEventCardHtml(evt, compact = false) {
+                const template = EVENT_TEMPLATES.find(t => t.id === evt.templateId);
+                if (!template) return '';
+
+                const impColor = evt.importance === 'KRİTİK' ? '#E34B4B' : (evt.importance === 'YÜKSEK' ? '#E9B949' : '#65D68A');
+
+                return `
+                    <div class="${compact ? '' : 'soviet-panel p-4 rounded'} space-y-3">
+                        <div class="flex flex-wrap justify-between items-center gap-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded" style="background:${impColor}25; color:${impColor}; border:1px solid ${impColor};">
+                                ÖNEM: ${evt.importance}
+                            </span>
+                            <span class="text-[11px] text-[#7B8E9B]">${evt.dateStr}</span>
+                        </div>
+                        <h3 class="text-sm sm:text-base font-bold text-white">${evt.title}</h3>
+                        <p class="text-xs text-[#D7E0E5] leading-relaxed">${evt.desc}</p>
+                        <div class="space-y-2 pt-2">
+                            ${template.options.map((opt, idx) => `
+                                <button onclick="GameEngine.resolveEventOption('${evt.uid}', ${idx})" class="btn-terminal w-full p-2.5 rounded text-left flex flex-col items-start gap-0.5">
+                                    <span class="text-xs font-bold text-[#65D68A]">&gt; ${opt.label}</span>
+                                    <span class="text-[11px] text-[#7B8E9B]">${opt.desc}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            },
+
+            buildEventsHtml() {
+                const events = this.state.activeEvents;
+
+                return `
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center border-b border-[#1F2E38] pb-2">
+                            <h2 class="font-display text-lg sm:text-xl text-[#65D68A] font-bold">KRİZ OLAYLARI VE KARAR MERKEZİ</h2>
+                            <span class="text-xs text-[#E9B949]">BEKLEYEN: ${events.length}</span>
+                        </div>
+
+                        ${events.length === 0 ? `
+                            <div class="soviet-panel p-8 rounded text-center space-y-2">
+                                <div class="text-[#65D68A] font-bold">TÜM ACİL OLAYLAR YANITLANDI</div>
+                                <p class="text-xs text-[#7B8E9B]">Zamanı ilerleterek veya yeni güne geçerek sahadan gelen yeni raporları takip edebilirsiniz.</p>
+                            </div>
+                        ` : `
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                ${events.map(evt => this.buildSingleEventCardHtml(evt, false)).join('')}
+                            </div>
+                        `}
+                    </div>
+                `;
+            },
+
+            buildReportsHtml() {
+                const s = this.state;
+
+                return `
+                    <div class="space-y-4">
+                        <div class="border-b border-[#1F2E38] pb-2">
+                            <h2 class="font-display text-lg sm:text-xl text-[#65D68A] font-bold">KOMUTA ARŞİVİ VE KARAR RAPORLARI</h2>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div class="soviet-panel p-4 rounded space-y-3">
+                                <h3 class="text-sm font-bold text-[#E9B949] border-b border-[#1F2E38] pb-1.5">ALINAN KARARLAR (${s.resolvedEvents.length})</h3>
+                                <div class="space-y-2 max-h-96 overflow-y-auto text-xs">
+                                    ${s.resolvedEvents.length === 0 ? '<p class="text-[#7B8E9B]">Henüz sonuçlandırılmış bir karar kaydı yok.</p>' : s.resolvedEvents.map(re => `
+                                        <div class="bg-[#080D12] border border-[#1F2E38] p-2.5 rounded space-y-1">
+                                            <div class="flex justify-between text-[10px] text-[#7B8E9B]">
+                                                <span>${re.title}</span>
+                                                <span>${re.date}</span>
+                                            </div>
+                                            <div class="text-[#65D68A] font-bold">Seçim: ${re.choice}</div>
+                                            <div class="text-[#D7E0E5]">Sonuç: ${re.result}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <div class="soviet-panel p-4 rounded space-y-3">
+                                <h3 class="text-sm font-bold text-[#65D68A] border-b border-[#1F2E38] pb-1.5">TÜM SİSTEM GÜNLÜĞÜ (${s.logs.length})</h3>
+                                <div class="space-y-2 max-h-96 overflow-y-auto text-xs">
+                                    ${s.logs.map(l => `
+                                        <div class="bg-[#080D12] border border-[#1F2E38] p-2 rounded">
+                                            <span class="text-[#E9B949] font-bold">[${l.time}]</span>
+                                            <span class="text-[#65D68A]">[${l.type}]</span>
+                                            <span class="text-[#D7E0E5]">${l.text}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            translateResourceKey(key) {
+                const map = {
+                    budget: 'Bütçe',
+                    food: 'Gıda',
+                    water: 'Su',
+                    medical: 'Tıbbi',
+                    staff: 'Personel',
+                    equipment: 'Ekipman'
+                };
+                return map[key] || key;
+            },
+
+            // ==================== 7. MODAL VE BİLDİRİM SİSTEMİ ====================
+            openModal({ title, bodyHtml, footerHtml = '', allowBack = false }) {
+                SoundSystem.click();
+                const backdrop = document.getElementById('modalBackdrop');
+                document.getElementById('modalTitle').textContent = title;
+                document.getElementById('modalBody').innerHTML = bodyHtml;
+                document.getElementById('modalFooter').innerHTML = footerHtml;
+
+                const backBtn = document.getElementById('modalBackBtn');
+                if (allowBack && this.modalHistory.length > 0) {
+                    backBtn.classList.remove('hidden');
+                } else {
+                    backBtn.classList.add('hidden');
+                }
+
+                backdrop.classList.remove('hidden');
+            },
+
+            closeModal() {
+                SoundSystem.click();
+                this.modalHistory = [];
+                document.getElementById('modalBackdrop').classList.add('hidden');
+            },
+
+            goBackModal() {
+                if (this.modalHistory.length > 0) {
+                    const prev = this.modalHistory.pop();
+                    this.openModal({ ...prev, allowBack: this.modalHistory.length > 0 });
+                } else {
+                    this.closeModal();
+                }
+            },
+
+            showScenarioSelectModal() {
+                this.openModal({
+                    title: 'OPERASYON SENARYOSU SEÇİN',
+                    bodyHtml: `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            ${Object.values(SCENARIOS).map(sc => `
+                                <div class="bg-[#080D12] border border-[#2A3F4D] p-3.5 rounded flex flex-col justify-between space-y-3">
+                                    <div>
+                                        <div class="text-xs text-[#E9B949] font-bold">${sc.code}</div>
+                                        <h3 class="text-base font-bold text-white mt-0.5">${sc.title}</h3>
+                                        <p class="text-xs text-[#7B8E9B] mt-2 leading-relaxed">${sc.description}</p>
+                                    </div>
+                                    <button onclick="GameEngine.closeModal(); GameEngine.startNewGame('${sc.id}')" class="btn-terminal btn-primary w-full py-2 px-3 rounded text-xs font-bold">
+                                        BU SENARYOYU BAŞLAT &gt;
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `,
+                    footerHtml: `<button onclick="GameEngine.closeModal()" class="btn-terminal px-4 py-1.5 rounded text-xs">İPTAL</button>`
+                });
+            },
+
+            showHowToPlayModal() {
+                this.openModal({
+                    title: 'KOMUTA MERKEZİ OPERASYON REHBERİ',
+                    bodyHtml: `
+                        <div class="space-y-3 text-xs leading-relaxed">
+                            <div class="bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div class="text-[#65D68A] font-bold mb-1">1. ZAMAN VE KONTROL</div>
+                                <p>Üst panelden oyunu duraklatabilir, 1x/2x/3x hızlarında akıtabilir veya "+1 GÜN" butonu ile doğrudan yeni güne geçebilirsiniz.</p>
+                            </div>
+                            <div class="bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div class="text-[#E9B949] font-bold mb-1">2. KAYNAKLAR VE LOJİSTİK</div>
+                                <p>Bütçe, gıda, su, tıbbi malzeme, personel ve ekipman sınırlıdır. Her gün nüfus ve personel tüketimi gerçekleşir. Kaynaklar sekmesinden tedarik yapabilirsiniz.</p>
+                            </div>
+                            <div class="bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div class="text-[#65D68A] font-bold mb-1">3. PRİPYAT HARİTASI VE SAHA EYLEMLERİ</div>
+                                <p>Harita sekmesindeki işaretçilere dokunarak tahliye konvoyları düzenleyebilir, barınma kapasitesini artırabilir veya bilimsel analiz başlatabilirsiniz.</p>
+                            </div>
+                            <div class="bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div class="text-[#E34B4B] font-bold mb-1">4. KARAR KARTLARI VE KAYIT</div>
+                                <p>Olaylar sekmesinde karşınıza çıkan kriz kararları halk güvenini ve kaynakları doğrudan etkiler. İlerlemeniz yerel tarayıcı belleğine otomatik kaydedilir.</p>
+                            </div>
+                        </div>
+                    `,
+                    footerHtml: `<button onclick="GameEngine.closeModal()" class="btn-terminal btn-primary px-4 py-1.5 rounded text-xs">ANLAŞILDI</button>`
+                });
+            },
+
+            showStatsModal() {
+                const st = StorageManager.getGlobalStats();
+                this.openModal({
+                    title: 'KOMUTA MERKEZİ GENEL İSTATİSTİKLERİ',
+                    bodyHtml: `
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div class="text-[#7B8E9B]">BAŞLATILAN OPERASYON</div>
+                                <div class="text-lg font-bold text-white mt-1">${st.gamesPlayed}</div>
+                            </div>
+                            <div class="bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div class="text-[#7B8E9B]">EN UZUN GÖREV SÜRESİ</div>
+                                <div class="text-lg font-bold text-[#E9B949] mt-1">${st.daysSurvived} GÜN</div>
+                            </div>
+                            <div class="bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div class="text-[#7B8E9B]">TOPLAM TAHLİYE EDİLEN</div>
+                                <div class="text-lg font-bold text-[#65D68A] mt-1">${st.totalEvacuated.toLocaleString('tr-TR')} KİŞİ</div>
+                            </div>
+                            <div class="bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div class="text-[#7B8E9B]">VERİLEN KRİTİK KARAR</div>
+                                <div class="text-lg font-bold text-white mt-1">${st.decisionsMade}</div>
+                            </div>
+                        </div>
+                    `,
+                    footerHtml: `<button onclick="GameEngine.closeModal()" class="btn-terminal px-4 py-1.5 rounded text-xs">KAPAT</button>`
+                });
+            },
+
+            showSettingsModal() {
+                const cfg = StorageManager.getSettings();
+                this.openModal({
+                    title: 'TERMİNAL VE SİSTEM AYARLARI',
+                    bodyHtml: `
+                        <div class="space-y-3 text-xs">
+                            <div class="flex items-center justify-between bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div>
+                                    <div class="font-bold text-white">KONTROL ODASI SES EFEKTLERİ</div>
+                                    <div class="text-[#7B8E9B]">Sentetik telsiz, uyarı ve terminal tıklama sesleri</div>
+                                </div>
+                                <button id="toggleSoundBtn" onclick="GameEngine.toggleSetting('soundEnabled')" class="btn-terminal ${cfg.soundEnabled ? 'btn-primary' : ''} px-3 py-1.5 rounded font-bold">
+                                    ${cfg.soundEnabled ? 'AÇIK' : 'KAPALI'}
+                                </button>
+                            </div>
+
+                            <div class="flex items-center justify-between bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div>
+                                    <div class="font-bold text-white">CRT MONİTÖR TARAMA EFEKTİ</div>
+                                    <div class="text-[#7B8E9B]">1980'ler Sovyet ekran çizgisi filtresi</div>
+                                </div>
+                                <button id="toggleCrtBtn" onclick="GameEngine.toggleSetting('crtEnabled')" class="btn-terminal ${cfg.crtEnabled ? 'btn-primary' : ''} px-3 py-1.5 rounded font-bold">
+                                    ${cfg.crtEnabled ? 'AÇIK' : 'KAPALI'}
+                                </button>
+                            </div>
+
+                            <div class="flex items-center justify-between bg-[#080D12] p-3 rounded border border-[#1F2E38]">
+                                <div>
+                                    <div class="font-bold text-white">OTOMATİK KAYIT SİSTEMİ</div>
+                                    <div class="text-[#7B8E9B]">Her oyun günü sonunda ilerlemeyi tarayıcıya kaydet</div>
+                                </div>
+                                <button id="toggleAutoSaveBtn" onclick="GameEngine.toggleSetting('autoSave')" class="btn-terminal ${cfg.autoSave ? 'btn-primary' : ''} px-3 py-1.5 rounded font-bold">
+                                    ${cfg.autoSave ? 'AÇIK' : 'KAPALI'}
+                                </button>
+                            </div>
+
+                            <div class="pt-2 border-t border-[#1F2E38] flex justify-between items-center">
+                                <span class="text-[#E34B4B]">Kayıtlı oyun verisini tamamen temizle:</span>
+                                <button onclick="GameEngine.confirmResetSave()" class="btn-terminal btn-danger px-3 py-1.5 rounded font-bold">
+                                    KAYDI SIFIRLA
+                                </button>
+                            </div>
+                        </div>
+                    `,
+                    footerHtml: `<button onclick="GameEngine.closeModal()" class="btn-terminal btn-primary px-4 py-1.5 rounded text-xs">TAMAM</button>`
+                });
+            },
+
+            toggleSetting(key) {
+                const cfg = StorageManager.getSettings();
+                cfg[key] = !cfg[key];
+                StorageManager.saveSettings(cfg);
+
+                if (key === 'soundEnabled') {
+                    SoundSystem.setEnabled(cfg.soundEnabled);
+                    if (cfg.soundEnabled) SoundSystem.notify();
+                } else if (key === 'crtEnabled') {
+                    this.applyCrtSetting(cfg.crtEnabled);
+                }
+                this.showSettingsModal();
+            },
+
+            confirmResetSave() {
+                this.modalHistory.push({
+                    title: 'TERMİNAL VE SİSTEM AYARLARI',
+                    bodyHtml: document.getElementById('modalBody').innerHTML,
+                    footerHtml: document.getElementById('modalFooter').innerHTML
+                });
+
+                this.openModal({
+                    title: 'KAYIT SIFIRLAMA ONAYI',
+                    allowBack: true,
+                    bodyHtml: `
+                        <div class="space-y-2 text-xs">
+                            <p class="text-[#E34B4B] font-bold">DİKKAT: Mevcut kayıtlı oyun ilerlemeniz kalıcı olarak silinecektir.</p>
+                            <p class="text-[#D7E0E5]">Bu işlemi onaylıyor musunuz?</p>
+                        </div>
+                    `,
+                    footerHtml: `
+                        <button onclick="GameEngine.goBackModal()" class="btn-terminal px-4 py-1.5 rounded text-xs">İPTAL</button>
+                        <button onclick="GameEngine.executeResetSave()" class="btn-terminal btn-danger px-4 py-1.5 rounded text-xs font-bold">EVET, SIFIRLA</button>
+                    `
+                });
+            },
+
+            executeResetSave() {
+                StorageManager.clearGame();
+                this.closeModal();
+                this.refreshMainMenuState();
+                this.showToast('Kayıtlı oyun verisi silindi.', 'danger');
+                if (this.state && !document.getElementById('gameScreen').classList.contains('hidden')) {
+                    this.state = null;
+                    this.returnToMainMenu();
+                }
+            },
+
+            showToast(message, type = 'info') {
+                const container = document.getElementById('toastContainer');
+                if (!container) return;
+
+                const colors = {
+                    success: 'border-[#65D68A] text-[#65D68A]',
+                    danger: 'border-[#E34B4B] text-[#E34B4B]',
+                    info: 'border-[#E9B949] text-[#E9B949]'
+                };
+
+                const toast = document.createElement('div');
+                toast.className = `bg-[#0D151B] border ${colors[type] || colors.info} px-3.5 py-2.5 rounded shadow-lg text-xs font-medium pointer-events-auto transition-opacity duration-300`;
+                toast.textContent = `> ${message}`;
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3200);
+            },
+
+            // Mobil Menü Kontrolleri
+            openMobileMenu() {
+                document.getElementById('sidebarMenu').classList.remove('-translate-x-full');
+                document.getElementById('mobileSidebarBackdrop').classList.remove('hidden');
+            },
+
+            closeMobileMenu() {
+                document.getElementById('sidebarMenu').classList.add('-translate-x-full');
+                document.getElementById('mobileSidebarBackdrop').classList.add('hidden');
+            },
+
+            bindGlobalEvents() {
+                // Ana Menü Butonları
+                document.getElementById('btnMenuNewGame').addEventListener('click', () => this.showScenarioSelectModal());
+                document.getElementById('btnMenuContinue').addEventListener('click', () => this.continueSavedGame());
+                document.getElementById('btnMenuScenarios').addEventListener('click', () => this.showScenarioSelectModal());
+                document.getElementById('btnMenuHowTo').addEventListener('click', () => this.showHowToPlayModal());
+                document.getElementById('btnMenuStats').addEventListener('click', () => this.showStatsModal());
+                document.getElementById('btnMenuSettings').addEventListener('click', () => this.showSettingsModal());
+
+                // HUD Zaman Kontrolleri
+                document.getElementById('btnSpeedPause').addEventListener('click', () => { SoundSystem.click(); this.setSpeed(0); });
+                document.getElementById('btnSpeed1x').addEventListener('click', () => { SoundSystem.click(); this.setSpeed(1); });
+                document.getElementById('btnSpeed2x').addEventListener('click', () => { SoundSystem.click(); this.setSpeed(2); });
+                document.getElementById('btnSpeed3x').addEventListener('click', () => { SoundSystem.click(); this.setSpeed(3); });
+                document.getElementById('btnNextDay').addEventListener('click', () => this.advanceOneFullDay());
+
+                // HUD Sağ Butonlar
+                document.getElementById('btnHudSave').addEventListener('click', () => {
+                    if (this.state && StorageManager.saveGame(this.state)) {
+                        SoundSystem.notify();
+                        this.showToast('Oyun ilerlemesi manuel olarak kaydedildi.', 'success');
+                    }
+                });
+                document.getElementById('btnHudSettings').addEventListener('click', () => this.showSettingsModal());
+                document.getElementById('btnHudMainMenu').addEventListener('click', () => {
+                    SoundSystem.click();
+                    this.returnToMainMenu();
+                });
+
+                // Sol Menü Sekmeleri
+                document.querySelectorAll('.nav-item').forEach(btn => {
+                    btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
+                });
+
+                // Mobil Menü Aç/Kapat
+                document.getElementById('btnMobileMenu').addEventListener('click', () => this.openMobileMenu());
+                document.getElementById('btnCloseMobileMenu').addEventListener('click', () => this.closeMobileMenu());
+                document.getElementById('mobileSidebarBackdrop').addEventListener('click', () => this.closeMobileMenu());
+
+                // Modal Kapatma ve Geri Butonu
+                document.getElementById('modalCloseBtn').addEventListener('click', () => this.closeModal());
+                document.getElementById('modalBackBtn').addEventListener('click', () => this.goBackModal());
+            }
+        };
+
+        // Sayfa Yüklendiğinde Motoru Başlat
+        window.addEventListener('DOMContentLoaded', () => {
+            GameEngine.init();
+        });
+    </script>
+</body>
+</html>
